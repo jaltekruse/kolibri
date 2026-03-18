@@ -329,7 +329,7 @@
         context: 'Error message description',
       },
       photoCreditLabel: {
-        message: 'Photo credit: {photoCredit}',
+        message: 'Photo credit Jason: {photoCredit}',
         context: 'Gives credit to the photographer of the background image.',
       },
     },
