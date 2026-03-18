@@ -2,7 +2,7 @@
   "AuthBase.accessAsGuest": "Explore without account",
   "AuthBase.oidcGenericExplanation": "Kolibri is an e-learning platform. You can also use your Kolibri account to log in to some third-party applications.",
   "AuthBase.oidcSpecificExplanation": "You were sent here from the application '{app_name}'. Kolibri is an e-learning platform, and you can also use your Kolibri account to access '{app_name}'.",
-  "AuthBase.photoCreditLabel": "Photo credit: {photoCredit}",
+  "AuthBase.photoCreditLabel": "Photo credit JASON: {photoCredit}",
   "AuthBase.poweredBy": "Kolibri {version}",
   "AuthBase.poweredByKolibri": "Powered by Kolibri",
   "AuthBase.restrictedAccess": "Access to Kolibri has been restricted for external devices",
