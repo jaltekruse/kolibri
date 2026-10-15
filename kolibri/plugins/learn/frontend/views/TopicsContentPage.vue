@@ -61,20 +61,25 @@
       >
         {{ pageHeading }}
       </h1>
-      <ContentPage
-        ref="contentPage"
-        class="content"
-        data-testid="contentPage"
-        :content="content"
-        :lessonId="lessonId"
-        :style="{
-          backgroundColor: content.assessmentmetadata ? '' : 'var(--tokens-textInverted)',
-        }"
-        :allowMarkComplete="allowMarkComplete"
-        @mounted="contentPageMounted = true"
-        @finished="$refs.activityBar && $refs.activityBar.animateNextSteps()"
-        @error="onError"
-      />
+      <LessonResponsesLayout
+        :lessonId="isUserLoggedIn ? lessonId : null"
+        :contentnodeId="content.id"
+      >
+        <ContentPage
+          ref="contentPage"
+          class="content"
+          data-testid="contentPage"
+          :content="content"
+          :lessonId="lessonId"
+          :style="{
+            backgroundColor: content.assessmentmetadata ? '' : 'var(--tokens-textInverted)',
+          }"
+          :allowMarkComplete="allowMarkComplete"
+          @mounted="contentPageMounted = true"
+          @finished="$refs.activityBar && $refs.activityBar.animateNextSteps()"
+          @error="onError"
+        />
+      </LessonResponsesLayout>
     </div>
 
     <GlobalSnackbar />
@@ -197,6 +202,7 @@
   import commonLearnStrings from './commonLearnStrings';
   import CurrentlyViewedResourceMetadata from './CurrentlyViewedResourceMetadata';
   import ContentPage from './ContentPage';
+  import LessonResponsesLayout from './LessonResponses/LessonResponsesLayout';
   import LearningActivityBar from './LearningActivityBar';
   import AlsoInThis from './AlsoInThis';
 
@@ -207,6 +213,7 @@
       AppError,
       AuthMessage,
       ContentPage,
+      LessonResponsesLayout,
       SidePanelModal,
       GlobalSnackbar,
       LearningActivityBar,
