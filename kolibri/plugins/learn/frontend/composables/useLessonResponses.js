@@ -8,8 +8,10 @@ export const AUTOSAVE_DELAY = 2000;
 /**
  * The current learner's answers to the prompts on a lesson resource, and their coach's
  * feedback. Answers are saved automatically as the learner types, until they are submitted.
- * @param {string} lessonId
- * @param {string} contentnodeId
+ * @param {string} lessonId - The lesson the resource is in
+ * @param {string} contentnodeId - The resource the prompts are about
+ * @returns {object} The answers, feedback and save state, and functions to change answers,
+ * save them now, submit them, and reload them
  */
 export default function useLessonResponses(lessonId, contentnodeId) {
   const params = { lesson_id: lessonId, contentnode_id: contentnodeId };

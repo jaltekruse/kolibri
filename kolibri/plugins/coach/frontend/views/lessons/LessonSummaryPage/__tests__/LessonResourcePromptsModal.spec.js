@@ -3,8 +3,7 @@ import { coreStrings } from 'kolibri/uiText/commonCoreStrings';
 import { lessonResponsesStrings } from 'kolibri-common/strings/lessonResponsesStrings';
 import LessonResourcePromptsModal from '../LessonResourcePromptsModal';
 
-const { addQuestionAction$, questionNumberLabel$, removeQuestionAction$ } =
-  lessonResponsesStrings;
+const { addQuestionAction$, questionNumberLabel$, removeQuestionAction$ } = lessonResponsesStrings;
 const { saveAction$, cancelAction$ } = coreStrings;
 
 const PROMPTS = [

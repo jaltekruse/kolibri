@@ -79,10 +79,12 @@
         <h4 class="feedback-heading">
           {{ feedbackLabel$() }}
         </h4>
-        <p><span class="multiline-text">{{ feedback.comment }}</span></p>
+        <p>
+          <span class="multiline-text">{{ feedback.comment }}</span>
+        </p>
       </div>
       <KButton
-        appearance="basic-link"
+        appearance="flat-button"
         :text="feedback ? editFeedbackAction$() : addFeedbackAction$()"
         @click="startEditing"
       />
@@ -168,11 +170,11 @@
           const feedback = props.feedback
             ? await LessonResponseFeedbackResource.update(props.feedback.id, data)
             : await LessonResponseFeedbackResource.create({
-                ...data,
-                user: props.learnerId,
-                lesson_id: props.lessonId,
-                contentnode_id: props.contentnodeId,
-              });
+              ...data,
+              user: props.learnerId,
+              lesson_id: props.lessonId,
+              contentnode_id: props.contentnodeId,
+            });
           emit('feedbackSaved', feedback);
           editing.value = false;
           createSnackbar(feedbackSavedMessage$());
@@ -286,7 +288,7 @@
 
   .answer {
     padding: 8px;
-    background-color: var(--tokens-surfaceMuted);
+    background-color: var(--palette-grey-v100);
   }
 
   .feedback {

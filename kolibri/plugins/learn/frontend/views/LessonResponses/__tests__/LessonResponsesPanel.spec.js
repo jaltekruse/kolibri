@@ -94,9 +94,7 @@ describe('LessonResponsesPanel', () => {
     renderPanel({ responses: [response('prompt-1', 'Only answer')] });
     await answerBox(1);
     await fireEvent.click(screen.getByRole('button', { name: submitAnswersAction$() }));
-    expect(screen.getByRole('dialog')).toHaveTextContent(
-      unansweredQuestionsWarning$({ count: 1 }),
-    );
+    expect(screen.getByRole('dialog')).toHaveTextContent(unansweredQuestionsWarning$({ count: 1 }));
   });
 
   it('cannot submit before any question is answered', async () => {
@@ -119,9 +117,7 @@ describe('LessonResponsesPanel', () => {
     expect(await screen.findByTestId('answer-prompt-1')).toHaveTextContent('Submitted answer');
     expect(screen.getByTestId('overall-feedback')).toHaveTextContent('Well argued overall');
     expect(screen.getByTestId('overall-feedback')).toHaveTextContent(coachFeedbackLabel$());
-    expect(screen.getByTestId('feedback-prompt-1')).toHaveTextContent(
-      'Look again at paragraph 2',
-    );
+    expect(screen.getByTestId('feedback-prompt-1')).toHaveTextContent('Look again at paragraph 2');
     expect(screen.queryByTestId('feedback-prompt-2')).not.toBeInTheDocument();
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });

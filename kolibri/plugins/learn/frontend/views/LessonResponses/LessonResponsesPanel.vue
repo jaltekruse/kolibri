@@ -20,7 +20,7 @@
       <p>{{ loadErrorStatus$() }}</p>
       <KButton
         :text="tryAgainAction$()"
-        appearance="basic-link"
+        appearance="flat-button"
         @click="load"
       />
     </div>
@@ -48,7 +48,9 @@
         <h3 class="feedback-heading">
           {{ coachFeedbackLabel$() }}
         </h3>
-        <p><span class="multiline-text">{{ feedback.comment }}</span></p>
+        <p>
+          <span class="multiline-text">{{ feedback.comment }}</span>
+        </p>
       </div>
 
       <ol class="prompts">
@@ -60,7 +62,9 @@
           <h3 class="prompt-heading">
             {{ questionNumberLabel$({ number: index + 1 }) }}
           </h3>
-          <p><span class="multiline-text">{{ prompt.text }}</span></p>
+          <p>
+            <span class="multiline-text">{{ prompt.text }}</span>
+          </p>
 
           <KTextbox
             v-if="!submitted"
@@ -87,7 +91,9 @@
             <h4 class="feedback-heading">
               {{ coachFeedbackLabel$() }}
             </h4>
-            <p><span class="multiline-text">{{ promptFeedback(prompt) }}</span></p>
+            <p>
+              <span class="multiline-text">{{ promptFeedback(prompt) }}</span>
+            </p>
           </div>
         </li>
       </ol>
@@ -106,7 +112,7 @@
         <KButton
           v-if="saveError"
           :text="tryAgainAction$()"
-          appearance="basic-link"
+          appearance="flat-button"
           @click="saveNow"
         />
         <KButton
@@ -302,7 +308,7 @@
 
   .answer {
     padding: 8px;
-    background-color: var(--tokens-surfaceMuted);
+    background-color: var(--palette-grey-v100);
   }
 
   .status {

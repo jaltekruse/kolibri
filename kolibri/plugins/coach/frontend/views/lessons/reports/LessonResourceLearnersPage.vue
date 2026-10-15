@@ -114,8 +114,8 @@
   import ReportsResourcesStats from '../../common/tables/ReportsResourcesStats';
   import ReportsControls from '../../common/ReportsControls';
   import ReportsResourceHeader from '../../common/ReportsResourceHeader';
-  import LessonResourceResponses from './LessonResourceResponses';
   import store from '../../../store';
+  import LessonResourceResponses from './LessonResourceResponses';
 
   export default {
     name: 'LessonResourceLearnersPage',

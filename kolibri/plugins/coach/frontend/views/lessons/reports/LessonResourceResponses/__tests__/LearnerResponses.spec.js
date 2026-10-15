@@ -100,10 +100,7 @@ describe('LearnerResponses', () => {
     expect(screen.getByTestId('feedback-prompt-1')).toHaveTextContent('Which pigment?');
 
     await fireEvent.click(screen.getByRole('button', { name: editFeedbackAction$() }));
-    await fireEvent.update(
-      screen.getByRole('textbox', { name: overallFeedbackLabel$() }),
-      'Great',
-    );
+    await fireEvent.update(screen.getByRole('textbox', { name: overallFeedbackLabel$() }), 'Great');
     await fireEvent.click(screen.getByRole('button', { name: saveAction$() }));
 
     await waitFor(() =>

@@ -10,10 +10,10 @@ export default new Resource({
   namespace: 'kolibri.plugins.lesson_responses',
   /**
    * Save the current learner's answers, and optionally submit them.
-   * @param {object} options
-   * @param {string} options.lessonId
-   * @param {string} options.contentnodeId
-   * @param {Object<string, string>} options.answers - Answer text keyed by prompt id
+   * @param {object} options - The answers to save and where they belong
+   * @param {string} options.lessonId - The lesson the resource is in
+   * @param {string} options.contentnodeId - The resource the prompts are about
+   * @param {{[promptId: string]: string}} options.answers - Answer text keyed by prompt id
    * @param {boolean} [options.submit=false] - Whether to submit the answers
    * @returns {Promise<object[]>} The learner's saved answers
    */
