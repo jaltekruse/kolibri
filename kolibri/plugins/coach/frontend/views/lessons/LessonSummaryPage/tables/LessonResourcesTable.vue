@@ -67,6 +67,13 @@
               <td v-if="editable">
                 <div class="actions">
                   <KIconButton
+                    v-if="tableRow.kind !== ContentNodeKinds.EXERCISE"
+                    icon="question"
+                    :ariaLabel="editQuestionsAction$()"
+                    :tooltip="editQuestionsAction$()"
+                    @click="$emit('editPrompts', tableRow)"
+                  />
+                  <KIconButton
                     icon="clear"
                     :ariaLabel="removeAction$()"
                     @click="() => handleRemoveEntry(tableRow)"
@@ -89,6 +96,8 @@
   import CoreTable from 'kolibri/components/CoreTable';
   import TimeDuration from 'kolibri-common/components/TimeDuration';
   import { coreStrings } from 'kolibri/uiText/commonCoreStrings';
+  import { ContentNodeKinds } from 'kolibri/constants';
+  import { lessonResponsesStrings } from 'kolibri-common/strings/lessonResponsesStrings';
   import DraggableRegion from 'kolibri-common/components/draggable/DraggableRegion';
   import DraggableHandle from 'kolibri-common/components/draggable/DraggableHandle';
   import DragSortWidget from 'kolibri-common/components/draggable/DragSortWidget';
@@ -112,8 +121,11 @@
     setup() {
       const { resourcesLabel$, removeAction$, progressLabel$ } = coreStrings;
       const { noResourcesInLessonLabel$, titleLabel$, avgTimeSpentLabel$ } = coachStrings;
+      const { editQuestionsAction$ } = lessonResponsesStrings;
 
       return {
+        ContentNodeKinds,
+        editQuestionsAction$,
         resourcesLabel$,
         removeAction$,
         noResourcesInLessonLabel$,

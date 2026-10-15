@@ -60,6 +60,7 @@
                 :editable="editable && !$isPrint"
                 :entries="resourcesTable"
                 @change="handleResourcesChange"
+                @editPrompts="resourceForPrompts = $event"
               />
             </template>
             <template #[ReportsLessonTabs.LEARNERS]>
@@ -73,6 +74,13 @@
           <ManageLessonModals
             :currentAction="currentAction"
             @cancel="currentAction = ''"
+          />
+          <LessonResourcePromptsModal
+            v-if="resourceForPrompts"
+            :resourceTitle="resourceForPrompts.title"
+            :prompts="promptsFor(resourceForPrompts)"
+            @submit="savePrompts"
+            @cancel="resourceForPrompts = null"
           />
         </KPageContainer>
       </KGridItem>
@@ -105,6 +113,7 @@
   import LessonLearnersTable from './tables/LessonLearnersTable';
   import LessonOptionsDropdownMenu from './LessonOptionsDropdownMenu';
   import ManageLessonModals from './ManageLessonModals';
+  import LessonResourcePromptsModal from './LessonResourcePromptsModal';
 
   const REMOVAL_SNACKBAR_TIME = 5000;
 
@@ -114,6 +123,7 @@
       ReportsControls,
       CoachAppBarPage,
       ManageLessonModals,
+      LessonResourcePromptsModal,
       LessonOptionsDropdownMenu,
       LessonLearnersTable,
       LessonResourcesTable,
@@ -151,6 +161,8 @@
 
       return {
         currentAction: '',
+        // The resources table row whose questions are being edited
+        resourceForPrompts: null,
         ReportsLessonTabs,
         workingResourcesBackup,
         REPORTS_LESSON_TABS_ID,
@@ -320,6 +332,19 @@
             actionCallback: undo,
             hideCallback: hide,
           },
+        );
+      },
+      promptsFor(tableRow) {
+        const resource = this.workingResources.find(r => r.contentnode_id === tableRow.node_id);
+        return resource?.prompts || [];
+      },
+      async savePrompts(prompts) {
+        const nodeId = this.resourceForPrompts.node_id;
+        this.resourceForPrompts = null;
+        await this.save(
+          this.workingResources.map(resource =>
+            resource.contentnode_id === nodeId ? { ...resource, prompts } : resource,
+          ),
         );
       },
       async handleResourcesChange({ newArray }) {

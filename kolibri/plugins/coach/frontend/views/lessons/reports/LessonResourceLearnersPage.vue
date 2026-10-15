@@ -85,6 +85,12 @@
 
         <ReportsLearnersTable :entries="allEntries" />
       </template>
+
+      <LessonResourceResponses
+        :lessonId="$route.params.lessonId"
+        :contentId="$route.params.resourceId"
+        :learners="allEntries"
+      />
     </KPageContainer>
   </CoachAppBarPage>
 
@@ -108,6 +114,7 @@
   import ReportsResourcesStats from '../../common/tables/ReportsResourcesStats';
   import ReportsControls from '../../common/ReportsControls';
   import ReportsResourceHeader from '../../common/ReportsResourceHeader';
+  import LessonResourceResponses from './LessonResourceResponses';
   import store from '../../../store';
 
   export default {
@@ -118,6 +125,7 @@
       ReportsResourcesStats,
       ReportsControls,
       ReportsResourceHeader,
+      LessonResourceResponses,
     },
     mixins: [commonCoach],
     setup() {
