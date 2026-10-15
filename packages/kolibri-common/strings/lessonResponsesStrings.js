@@ -97,6 +97,10 @@ export const lessonResponsesStrings = createTranslator('LessonResponsesStrings',
     message: 'Learner answers',
     context: "Heading for learners' answers to a coach's questions about a resource.",
   },
+  learnerAnswersLoadError: {
+    message: 'Learner answers could not be loaded. Refresh the page to try again.',
+    context: "Shown to a coach when learners' answers to questions about a resource fail to load.",
+  },
   addFeedbackAction: {
     message: 'Add feedback',
     context: "Button for a coach to give feedback on a learner's answers.",

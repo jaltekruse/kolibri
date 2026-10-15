@@ -6,6 +6,12 @@
   >
     <h2>{{ learnerAnswersLabel$() }}</h2>
     <KCircularLoader v-if="loading" />
+    <p
+      v-else-if="loadError"
+      role="alert"
+    >
+      {{ learnerAnswersLoadError$() }}
+    </p>
     <template v-else>
       <LearnerResponses
         v-for="learner in learners"
@@ -51,6 +57,7 @@
       const prompts = ref([]);
       const contentnodeId = ref(null);
       const loading = ref(true);
+      const loadError = ref(null);
       // {answers, submitted} keyed by learner id
       const responsesByLearner = ref({});
       // Feedback keyed by learner id
@@ -85,6 +92,10 @@
           feedbackByLearner.value = Object.fromEntries(
             feedbackList.map(feedback => [feedback.user, feedback]),
           );
+        } catch (error) {
+          // If the lesson itself failed to load, it is unknown whether the resource
+          // has questions, so nothing is shown.
+          loadError.value = error;
         } finally {
           loading.value = false;
         }
@@ -100,16 +111,18 @@
 
       load();
 
-      const { learnerAnswersLabel$ } = lessonResponsesStrings;
+      const { learnerAnswersLabel$, learnerAnswersLoadError$ } = lessonResponsesStrings;
 
       return {
         contentnodeId,
         feedbackByLearner,
+        loadError,
         loading,
         prompts,
         responsesFor,
         setFeedback,
         learnerAnswersLabel$,
+        learnerAnswersLoadError$,
       };
     },
     props: {
