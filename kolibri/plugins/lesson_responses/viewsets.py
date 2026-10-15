@@ -8,6 +8,7 @@ from rest_framework.response import Response
 
 from kolibri.core.api import HexUUIDField
 from kolibri.core.api import ReadOnlyValuesViewset
+from kolibri.core.api import ValuesViewset
 from kolibri.core.auth.permissions import KolibriAuthPermissions
 from kolibri.core.auth.permissions import KolibriAuthPermissionsFilter
 from kolibri.core.lessons.models import Lesson
@@ -17,8 +18,10 @@ from kolibri.core.logger.models import ContentSummaryLog
 from kolibri.core.logger.models import MasteryLog
 from kolibri.utils.time_utils import local_now
 
+from .models import LessonResponseFeedback
 from .utils import get_response_content_id
 from .utils import MAX_ANSWER_LENGTH
+from .utils import MAX_COMMENT_LENGTH
 from .utils import RESPONSE_KIND
 from .utils import RESPONSE_MASTERY_LEVEL
 from .utils import SIMPLE_ANSWER_LENGTH
@@ -205,3 +208,73 @@ class LessonResponseViewset(ReadOnlyValuesViewset):
                 _get_responses(lesson_id, contentnode_id).filter(user=request.user)
             )
         )
+
+
+class LessonResponseFeedbackSerializer(serializers.ModelSerializer):
+    lesson_id = HexUUIDField()
+    contentnode_id = HexUUIDField()
+    comment = serializers.CharField(
+        allow_blank=True, required=False, max_length=MAX_COMMENT_LENGTH
+    )
+    # Keyed by prompt id
+    prompt_comments = serializers.DictField(
+        child=serializers.CharField(allow_blank=True, max_length=MAX_COMMENT_LENGTH),
+        required=False,
+    )
+
+    class Meta:
+        model = LessonResponseFeedback
+        fields = (
+            "id",
+            "user",
+            "lesson_id",
+            "contentnode_id",
+            "comment",
+            "prompt_comments",
+            "date_modified",
+        )
+        read_only_fields = ("id", "date_modified")
+
+    def validate(self, attrs):
+        lesson_id = attrs.get("lesson_id", getattr(self.instance, "lesson_id", None))
+        contentnode_id = attrs.get(
+            "contentnode_id", getattr(self.instance, "contentnode_id", None)
+        )
+        lesson = Lesson.objects.filter(id=lesson_id).first()
+        if lesson is None:
+            raise ValidationError({"lesson_id": "Lesson does not exist"})
+        resource = _get_prompted_resource(lesson, contentnode_id)
+        prompt_ids = {prompt["id"] for prompt in resource["prompts"]}
+        if not prompt_ids.issuperset(attrs.get("prompt_comments", {})):
+            raise ValidationError(
+                {"prompt_comments": "Comments must be for this resource's prompts"}
+            )
+        return attrs
+
+    def update(self, instance, validated_data):
+        # These identify the feedback record, so they cannot change.
+        for field in ("user", "lesson_id", "contentnode_id"):
+            validated_data.pop(field, None)
+        validated_data["date_modified"] = local_now()
+        return super().update(instance, validated_data)
+
+
+class LessonResponseFeedbackViewset(ValuesViewset):
+    """
+    Coach feedback on learners' answers to the prompts on a lesson resource.
+    Listing requires the ``lesson_id`` and ``contentnode_id`` query parameters.
+    Learners can read their own feedback; coaches can read and write feedback
+    for learners in their classes.
+    """
+
+    permission_classes = (IsAuthenticated, KolibriAuthPermissions)
+    filter_backends = (KolibriAuthPermissionsFilter,)
+    serializer_class = LessonResponseFeedbackSerializer
+
+    def get_queryset(self):
+        queryset = LessonResponseFeedback.objects.order_by("user_id")
+        if self.action != "list":
+            return queryset
+        params = LessonResourceSerializer(data=self.request.query_params)
+        params.is_valid(raise_exception=True)
+        return queryset.filter(**params.validated_data)

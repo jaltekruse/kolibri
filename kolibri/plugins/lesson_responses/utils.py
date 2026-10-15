@@ -21,6 +21,8 @@ RESPONSE_MASTERY_LEVEL = 1
 
 MAX_ANSWER_LENGTH = 10000
 
+MAX_COMMENT_LENGTH = 10000
+
 # AttemptLog.simple_answer is a CharField of this length.
 SIMPLE_ANSWER_LENGTH = 200
 
