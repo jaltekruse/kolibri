@@ -66,11 +66,10 @@
               </td>
               <td v-if="editable">
                 <div class="actions">
-                  <KIconButton
+                  <KButton
                     v-if="tableRow.kind !== ContentNodeKinds.EXERCISE"
-                    icon="question"
-                    :ariaLabel="editQuestionsAction$()"
-                    :tooltip="editQuestionsAction$()"
+                    appearance="flat-button"
+                    :text="questionsCountLabel$({ count: tableRow.promptCount || 0 })"
                     @click="$emit('editPrompts', tableRow)"
                   />
                   <KIconButton
@@ -121,11 +120,11 @@
     setup() {
       const { resourcesLabel$, removeAction$, progressLabel$ } = coreStrings;
       const { noResourcesInLessonLabel$, titleLabel$, avgTimeSpentLabel$ } = coachStrings;
-      const { editQuestionsAction$ } = lessonResponsesStrings;
+      const { questionsCountLabel$ } = lessonResponsesStrings;
 
       return {
         ContentNodeKinds,
-        editQuestionsAction$,
+        questionsCountLabel$,
         resourcesLabel$,
         removeAction$,
         noResourcesInLessonLabel$,

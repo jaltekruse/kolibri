@@ -227,6 +227,7 @@
             ...content,
             node_id: content.id,
             avgTimeSpent: this.getContentAvgTimeSpent(content.content_id, this.recipients),
+            promptCount: resource.prompts ? resource.prompts.length : 0,
             tally,
             hasAssignments: Object.values(tally).reduce((a, b) => a + b, 0),
           };

@@ -80,6 +80,11 @@ export const lessonResponsesStrings = createTranslator('LessonResponsesStrings',
     context:
       'Button for a coach to write questions that learners answer in their own words about a resource in a lesson.',
   },
+  questionsCountLabel: {
+    message: 'Questions ({count, number})',
+    context:
+      'Button for a coach to edit the questions learners answer about a resource in a lesson, showing how many there are.',
+  },
   editQuestionsDescription: {
     message:
       'Learners answer these questions in their own words while viewing this resource. You can refer to pages or sections of the resource.',
