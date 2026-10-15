@@ -28,10 +28,26 @@ from kolibri.core.lessons.models import LessonAssignment
 from kolibri.core.query import annotate_array_aggregate
 
 
+class PromptSerializer(Serializer):
+    id = HexUUIDField()
+    text = CharField(max_length=1000)
+
+
 class ResourceSerializer(Serializer):
     content_id = HexUUIDField()
     channel_id = HexUUIDField()
     contentnode_id = HexUUIDField()
+    # Optional coach-written prompts that learners answer in free text about this
+    # resource. Read and answered through the lesson_responses plugin.
+    prompts = ListField(child=PromptSerializer(), required=False, max_length=50)
+
+    def validate_prompts(self, prompts):
+        prompt_ids = [prompt["id"] for prompt in prompts]
+        if len(prompt_ids) != len(set(prompt_ids)):
+            raise ValidationError(
+                "Prompt ids must be unique", code=error_constants.UNIQUE
+            )
+        return prompts
 
 
 class ClassroomSerializer(ModelSerializer):
