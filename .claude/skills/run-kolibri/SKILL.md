@@ -156,6 +156,54 @@ errors
 EOF
 ```
 
+A lesson can also hold **web pages**: a page from another website shown next to Free
+Math, with problems numbered as the coach lists them (`21-27 by 3` is 21, 24 and 27).
+Cloud containers cannot reach real websites, so serve a stand-in page from a second
+local port, which the browser treats as another site:
+
+```bash
+mkdir -p "$RUN_DIR/site" && printf '%s\n' '<!doctype html><title>Practice</title>' \
+  '<h1>Two-step equations</h1><ol start="21"><li>2x + 4 = 10</li><li>3x - 5 = 7</li>' \
+  '<li>5x + 1 = 16</li><li>4x - 8 = 0</li></ol>' > "$RUN_DIR/site/practice.html"
+tmux new-session -d -s site "cd $RUN_DIR/site && python3 -m http.server 8090 --bind 127.0.0.1"
+node .claude/skills/run-kolibri/driver.mjs <<EOF
+login coach coach
+nav /en/coach/#/$CLASS_ID/lessons/$LESSON_ID
+wait-role heading Web pages
+click button Add web page
+scope-role dialog
+fill Title = Two-step equations practice
+fill Web address = http://127.0.0.1:8090/practice.html
+fill Instructions = Solve every third problem, starting at 21.
+fill Problem numbers = 21-27 by 3
+click button Save
+scope -
+wait-role link Two-step equations practice
+login grace
+nav /en/learn/#/home/classes/$CLASS_ID/lesson/$LESSON_ID
+click link Two-step equations practice
+frame Two-step equations practice
+wait 2x + 4 = 10
+scope -
+frame Math editor for your answers
+wait Problem 21
+click-css .mq-editable-field
+type x=3
+scope -
+wait Answers saved
+ss learner-web-page
+login coach coach
+nav /en/coach/#/$CLASS_ID/lessons/$LESSON_ID
+click link Two-step equations practice
+frame Math editor for grading learner answers
+wait Problem 21
+scope -
+ss coach-web-page-report
+errors
+EOF
+tmux kill-session -t site
+```
+
 Screenshots land in `$RUN_DIR/shots/<name>.png` (the driver prints each path); a failing
 command saves `$RUN_DIR/shots/error.png` and, when piped, stops the script with exit
 code 1. Look at the screenshots - a page can render its shell while every request fails.
@@ -218,6 +266,10 @@ prek run --files $(git diff --name-only HEAD)   # lint what you changed; never -
 - **Typing into Free Math's math fields**: click the field, then `type`. `Shift+Enter`
   adds a blank step and focuses it a moment later, so `sleep 500` before typing again or
   the keys land in the old step. `Control+a` does not select a whole math field.
+- **Lesson web pages are framed from other websites**, which may refuse it (with
+  `X-Frame-Options` or CSP `frame-ancestors`); the frame then shows the browser's error
+  and learners use "Open page in a new tab". The `frame <page title>` command reaches
+  into it only while it loads.
 - **A learner's first view of the seeded one-page PDF opens "Resource completed"**, a
   modal over the questions panel, a few seconds after load. `dismiss` closes it.
 
