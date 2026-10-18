@@ -1,5 +1,6 @@
 import { get } from '@vueuse/core';
 import router from 'kolibri/router';
+import { pageLoading } from 'kolibri-common/composables/usePageLoading';
 import store from '../store';
 import { ClassesPageNames, PageNames } from '../constants';
 import { showLessonPlaylist } from '../modules/lessonPlaylist/handlers';
@@ -16,6 +17,7 @@ import ExamReportViewer from '../views/LearnExamReportViewer';
 import AllClassesPage from '../views/classes/AllClassesPage';
 import ClassAssignmentsPage from '../views/classes/ClassAssignmentsPage';
 import LessonPlaylistPage from '../views/classes/LessonPlaylistPage';
+import LessonWebPagePage from '../views/LessonResponses/LessonWebPagePage';
 
 function noClassesGuard() {
   const { canAccessUnassignedContent } = store.getters;
@@ -59,6 +61,19 @@ export default [
       return noClassesGuard() || showLessonPlaylist(store, { classId, lessonId });
     },
     component: LessonPlaylistPage,
+  },
+  {
+    name: ClassesPageNames.LESSON_WEB_PAGE,
+    path: '/classes/:classId/lesson/:lessonId/webpage/:webPageId',
+    handler: () => {
+      const redirect = noClassesGuard();
+      if (!redirect) {
+        // The page loads the web page itself
+        pageLoading.value = false;
+      }
+      return redirect;
+    },
+    component: LessonWebPagePage,
   },
   {
     name: ClassesPageNames.EXAM_VIEWER,

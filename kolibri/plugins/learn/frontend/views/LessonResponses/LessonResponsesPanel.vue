@@ -27,6 +27,13 @@
 
     <template v-else>
       <p
+        v-if="instructions"
+        class="instructions"
+        data-testid="instructions"
+      >
+        <span class="multiline-text">{{ instructions }}</span>
+      </p>
+      <p
         v-if="submitted"
         class="status"
         data-testid="submitted-status"
@@ -102,8 +109,9 @@
   import useLessonResponses from '../../composables/useLessonResponses';
 
   /**
-   * The questions a coach wrote about a lesson resource, which learners answer by
-   * showing their work in the Free Math editor.
+   * The problems learners answer about a lesson item, by showing their work in the
+   * Free Math editor: the questions a coach wrote about a lesson resource, or the
+   * problems the coach listed for a web page.
    */
   export default {
     name: 'LessonResponsesPanel',
@@ -123,16 +131,16 @@
         saveNow,
         setAnswers,
         submit,
-      } = useLessonResponses(props.lessonId, props.contentnodeId);
+      } = useLessonResponses(props.lessonId, props.itemId);
 
       const editor = ref(null);
       const showSubmitModal = ref(false);
       const headingId = `lesson-responses-${getCurrentInstance().uid}`;
 
       const answeredCount = computed(
-        () => props.prompts.filter(prompt => answers.value[prompt.id]).length,
+        () => props.problems.filter(problem => answers.value[problem.key]).length,
       );
-      const unansweredCount = computed(() => props.prompts.length - answeredCount.value);
+      const unansweredCount = computed(() => props.problems.length - answeredCount.value);
 
       const {
         loadErrorStatus$,
@@ -164,16 +172,14 @@
         return '';
       });
 
-      // Send the questions, with the learner's work on them, to the editor
+      // Send the problems, with the learner's work on them, to the editor
       function showWork() {
         editor.value.send('load-student', {
           title: props.title,
           readOnly: submitted.value,
-          problems: props.prompts.map((prompt, index) => ({
-            key: prompt.id,
-            number: String(index + 1),
-            prompt: prompt.text,
-            content: answers.value[prompt.id] || '',
+          problems: props.problems.map(problem => ({
+            ...problem,
+            content: answers.value[problem.key] || '',
           })),
         });
       }
@@ -227,16 +233,23 @@
         type: String,
         required: true,
       },
-      contentnodeId: {
+      // A lesson resource's contentnode_id, or a lesson web page's id
+      itemId: {
         type: String,
         required: true,
       },
-      // Array of {id, text}
-      prompts: {
+      // Array of {key, number, prompt}: how answers are saved, the problem number
+      // shown in the editor, and the question, if any
+      problems: {
         type: Array,
         required: true,
       },
-      // Title of the resource, shown in the editor
+      // What the coach asked learners to do, if more than the problems say
+      instructions: {
+        type: String,
+        default: '',
+      },
+      // Title of the lesson item, shown in the editor
       title: {
         type: String,
         default: '',
@@ -262,6 +275,10 @@
 
   .status {
     font-weight: bold;
+  }
+
+  .multiline-text {
+    white-space: pre-wrap;
   }
 
   .editor {

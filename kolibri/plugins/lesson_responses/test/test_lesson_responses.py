@@ -88,7 +88,7 @@ class LessonResponsesTestCase(APITestCase):
             reverse(BASENAME + "-save"),
             {
                 "lesson_id": (lesson or self.lesson).id,
-                "contentnode_id": (resource or self.resource)["contentnode_id"],
+                "item_id": (resource or self.resource)["contentnode_id"],
                 "answers": answers,
                 "submit": submit,
             },
@@ -100,7 +100,7 @@ class LessonResponsesTestCase(APITestCase):
             reverse(BASENAME + "-list"),
             {
                 "lesson_id": (lesson or self.lesson).id,
-                "contentnode_id": self.resource["contentnode_id"],
+                "item_id": self.resource["contentnode_id"],
             },
         )
 
@@ -109,7 +109,7 @@ class LessonResponsesTestCase(APITestCase):
             reverse(BASENAME + "-grade"),
             {
                 "lesson_id": self.lesson.id,
-                "contentnode_id": (resource or self.resource)["contentnode_id"],
+                "item_id": (resource or self.resource)["contentnode_id"],
                 "grades": grades,
             },
             format="json",

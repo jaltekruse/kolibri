@@ -11,8 +11,8 @@
       :key="`${lessonId}:${contentnodeId}`"
       class="responses"
       :lessonId="lessonId"
-      :contentnodeId="contentnodeId"
-      :prompts="prompts"
+      :itemId="contentnodeId"
+      :problems="problems"
       :title="title"
     />
   </div>
@@ -59,7 +59,16 @@
 
       const sideBySide = computed(() => prompts.value.length > 0 && windowIsLarge.value);
 
-      return { prompts, sideBySide };
+      // Questions are numbered in the order the coach wrote them
+      const problems = computed(() =>
+        prompts.value.map((prompt, index) => ({
+          key: prompt.id,
+          number: String(index + 1),
+          prompt: prompt.text,
+        })),
+      );
+
+      return { problems, prompts, sideBySide };
     },
     props: {
       // Only set when the resource is being viewed as part of a lesson

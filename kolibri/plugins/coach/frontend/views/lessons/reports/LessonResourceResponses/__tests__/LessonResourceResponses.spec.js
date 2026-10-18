@@ -81,7 +81,7 @@ describe('LessonResourceResponses', () => {
     expect(screen.getByRole('heading', { name: learnerAnswersLabel$() })).toBeInTheDocument();
     expect(LessonResponseResource.list).toHaveBeenCalledWith({
       lesson_id: 'lesson-id',
-      contentnode_id: 'contentnode-id',
+      item_id: 'contentnode-id',
     });
     const problem = (prompt, number, content) => ({
       key: prompt.id,
@@ -133,7 +133,7 @@ describe('LessonResourceResponses', () => {
     );
     expect(LessonResponseResource.grade).toHaveBeenCalledWith({
       lessonId: 'lesson-id',
-      contentnodeId: 'contentnode-id',
+      itemId: 'contentnode-id',
       grades: { 'learner-1': { 'prompt-1': ADA_GRADED_1 } },
     });
   });

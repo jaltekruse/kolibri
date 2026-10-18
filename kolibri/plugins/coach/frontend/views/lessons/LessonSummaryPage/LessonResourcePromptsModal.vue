@@ -55,7 +55,8 @@
   const MAX_PROMPT_LENGTH = 1000;
 
   /**
-   * Edits the questions that learners answer in their own words about a lesson resource.
+   * Edits the questions about a lesson resource that learners show their work on in the
+   * math editor.
    */
   export default {
     name: 'LessonResourcePromptsModal',

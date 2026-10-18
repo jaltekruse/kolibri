@@ -101,4 +101,93 @@ export const lessonResponsesStrings = createTranslator('LessonResponsesStrings',
     context:
       "Accessible name of the math editor where a coach grades learners' work on the questions about a resource, grouped by similar answers.",
   },
+  // Web pages in lessons
+  webPagesLabel: {
+    message: 'Web pages',
+    context:
+      'Heading for pages from the web, such as practice problems on another site, that a lesson asks learners to work from.',
+  },
+  webPagesDescription: {
+    message:
+      'Learners see each page next to a math editor, where they show their work on the problems you list.',
+    context: "Explains web pages in a lesson to a coach, above the lesson's list of web pages.",
+  },
+  noWebPagesDescription: {
+    message: 'This lesson has no web pages.',
+    context: 'Shown to a coach in place of the list of web pages in a lesson, when there are none.',
+  },
+  webPagesLoadError: {
+    message: 'Web pages could not be loaded. Refresh the page to try again.',
+    context: 'Shown when the web pages in a lesson fail to load.',
+  },
+  addWebPageAction: {
+    message: 'Add web page',
+    context: 'Button for a coach to add a page from the web to a lesson.',
+  },
+  editWebPageTitle: {
+    message: 'Edit web page',
+    context: 'Title of the dialog where a coach changes a web page in a lesson.',
+  },
+  webPageUrlLabel: {
+    message: 'Web address',
+    context: 'Label for the box where a coach enters the address (URL) of a page on the web.',
+  },
+  webPageUrlInvalid: {
+    message: 'Enter a web address that starts with http:// or https://',
+    context: 'Shown when the web address a coach entered for a web page is not usable.',
+  },
+  webPageEmbedHint: {
+    message:
+      'Some websites do not allow their pages to be shown inside other websites. Learners can always open the page in a new tab.',
+    context: 'Note for a coach adding a web page to a lesson, below the web address.',
+  },
+  instructionsLabel: {
+    message: 'Instructions',
+    context:
+      'Label for what a coach tells learners to do on a web page, such as which problems to solve.',
+  },
+  problemNumbersLabel: {
+    message: 'Problem numbers',
+    context:
+      'Label for the box where a coach lists the problems on a web page that learners show their work on.',
+  },
+  problemNumbersHint: {
+    message: 'Use commas between problems and ranges, for example: 1-10, 21-35 by 3',
+    context:
+      'Explains how a coach lists problems: "21-35 by 3" means every third problem from 21 to 35. Keep the example as written.',
+  },
+  problemNumbersInvalid: {
+    message:
+      'Check the problem numbers. Ranges like 21-35 must go up, and there can be at most 100 problems.',
+    context: 'Shown when the problem numbers a coach listed for a web page are not usable.',
+  },
+  problemsCountLabel: {
+    message: '{count, number} {count, plural, one {problem} other {problems}}',
+    context: 'How many problems learners show their work on for a web page.',
+  },
+  problemsListLabel: {
+    message: 'Problems: {problems}',
+    context: 'The problems learners show their work on for a web page, as the coach listed them.',
+  },
+  webPageSaveError: {
+    message: 'The web page could not be saved',
+    context: 'Shown when saving a web page in a lesson fails.',
+  },
+  removeWebPageTitle: {
+    message: 'Remove web page',
+    context: 'Title of the dialog where a coach confirms removing a web page from a lesson.',
+  },
+  removeWebPageDescription: {
+    message: "Learners will no longer see '{title}' in this lesson.",
+    context: 'Asks a coach to confirm removing a web page from a lesson.',
+  },
+  openWebPageAction: {
+    message: 'Open page in a new tab',
+    context: 'Link that opens a web page from a lesson in a new browser tab.',
+  },
+  webPageNotShowingHint: {
+    message: 'If the page does not appear, open it in a new tab.',
+    context:
+      'Shown to learners above a web page from a lesson, since some websites do not allow being shown inside Kolibri.',
+  },
 });

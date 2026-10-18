@@ -1,33 +1,13 @@
 <template>
 
-  <section
-    v-if="prompts.length"
-    class="lesson-resource-responses"
-  >
-    <h2>{{ learnerAnswersLabel$() }}</h2>
-    <KCircularLoader v-if="loading" />
-    <p
-      v-else-if="loadError"
-      role="alert"
-    >
-      {{ learnerAnswersLoadError$() }}
-    </p>
-    <p
-      v-else-if="!students.length"
-      data-testid="no-answers"
-    >
-      {{ noAnswersYetStatus$() }}
-    </p>
-    <FreeMathFrame
-      v-else
-      ref="grader"
-      class="grader"
-      mode="grader"
-      :title="gradingEditorLabel$()"
-      @ready="showWork"
-      @saveGrades="saveGrades"
-    />
-  </section>
+  <LessonResponsesGrader
+    v-if="resource"
+    :lessonId="lessonId"
+    :itemId="resource.contentnode_id"
+    :problems="problems"
+    :learners="learners"
+    :title="lessonTitle"
+  />
 
 </template>
 
@@ -35,137 +15,49 @@
 <script>
 
   import { computed, ref } from 'vue';
-  import FreeMathFrame from 'kolibri-common/components/FreeMathFrame';
   import LessonResource from 'kolibri-common/apiResources/LessonResource';
-  import LessonResponseResource from 'kolibri-common/apiResources/LessonResponseResource';
-  import { lessonResponsesStrings } from 'kolibri-common/strings/lessonResponsesStrings';
+  import LessonResponsesGrader from '../LessonResponsesGrader';
 
   /**
-   * Learners' work on the questions a coach wrote about a lesson resource, in Free Math's
-   * grading view, which groups similar answers to each question. The coach's scores and
-   * feedback are saved into each learner's answer. Shows nothing if the resource has no
-   * questions.
+   * Learners' answers to the questions a coach wrote about a lesson resource, for the
+   * coach to grade. Shows nothing if the resource has no questions, or if the lesson
+   * fails to load, as then it is unknown whether it has any.
    */
   export default {
     name: 'LessonResourceResponses',
     components: {
-      FreeMathFrame,
+      LessonResponsesGrader,
     },
     setup(props) {
-      const grader = ref(null);
       const lessonTitle = ref('');
-      const prompts = ref([]);
-      const contentnodeId = ref(null);
-      const loading = ref(true);
-      const loadError = ref(null);
-      // Free Math documents keyed by learner id, then prompt id
-      const answersByLearner = ref({});
+      // The lesson's entry for this resource, if it has questions
+      const resource = ref(null);
 
       async function load() {
+        let lesson;
         try {
-          const lesson = await LessonResource.retrieve(props.lessonId);
-          const resource = lesson.resources.find(
-            r => r.content_id === props.contentId && r.prompts?.length,
-          );
-          if (!resource) {
-            return;
-          }
-          lessonTitle.value = lesson.title;
-          contentnodeId.value = resource.contentnode_id;
-          prompts.value = resource.prompts;
-          const responses = await LessonResponseResource.list({
-            lesson_id: props.lessonId,
-            contentnode_id: resource.contentnode_id,
-          });
-          const byLearner = {};
-          for (const response of responses) {
-            byLearner[response.user] = {
-              ...byLearner[response.user],
-              [response.item]: response.answer.free_math,
-            };
-          }
-          answersByLearner.value = byLearner;
+          lesson = await LessonResource.retrieve(props.lessonId);
         } catch (error) {
-          // If the lesson itself failed to load, it is unknown whether the resource
-          // has questions, so nothing is shown.
-          loadError.value = error;
-        } finally {
-          loading.value = false;
+          // The rest of the report still works, so leave the answers out
+          return;
         }
+        lessonTitle.value = lesson.title;
+        resource.value =
+          lesson.resources.find(r => r.content_id === props.contentId && r.prompts?.length) || null;
       }
 
-      // Learners with answers, with their answers in the order of the questions
-      const students = computed(() =>
-        props.learners
-          .filter(learner => answersByLearner.value[learner.id])
-          .map(learner => ({
-            id: learner.id,
-            name: learner.name,
-            problems: prompts.value
-              .map((prompt, index) => ({
-                key: prompt.id,
-                number: String(index + 1),
-                prompt: prompt.text,
-                content: answersByLearner.value[learner.id][prompt.id],
-              }))
-              .filter(problem => problem.content),
-          })),
+      // Questions are numbered in the order the coach wrote them
+      const problems = computed(() =>
+        resource.value.prompts.map((prompt, index) => ({
+          key: prompt.id,
+          number: String(index + 1),
+          prompt: prompt.text,
+        })),
       );
-
-      function showWork() {
-        grader.value.send('load-grading', {
-          title: lessonTitle.value,
-          students: students.value,
-        });
-      }
-
-      /**
-       * Save grading done in the editor, one learner at a time to keep requests small.
-       * @param {{[learnerId: string]: {[promptId: string]: string}}} grades - Graded Free Math
-       * documents
-       * @param {function(boolean): void} respond - Tells the editor whether they were saved
-       */
-      async function saveGrades(grades, respond) {
-        try {
-          for (const [learnerId, documents] of Object.entries(grades)) {
-            await LessonResponseResource.grade({
-              lessonId: props.lessonId,
-              contentnodeId: contentnodeId.value,
-              grades: { [learnerId]: documents },
-            });
-            answersByLearner.value = {
-              ...answersByLearner.value,
-              [learnerId]: { ...answersByLearner.value[learnerId], ...documents },
-            };
-          }
-          respond(true);
-        } catch (error) {
-          respond(false);
-        }
-      }
 
       load();
 
-      const {
-        gradingEditorLabel$,
-        learnerAnswersLabel$,
-        learnerAnswersLoadError$,
-        noAnswersYetStatus$,
-      } = lessonResponsesStrings;
-
-      return {
-        grader,
-        loadError,
-        loading,
-        prompts,
-        students,
-        saveGrades,
-        showWork,
-        gradingEditorLabel$,
-        learnerAnswersLabel$,
-        learnerAnswersLoadError$,
-        noAnswersYetStatus$,
-      };
+      return { lessonTitle, problems, resource };
     },
     props: {
       lessonId: {
@@ -186,17 +78,3 @@
   };
 
 </script>
-
-
-<style lang="scss" scoped>
-
-  .lesson-resource-responses {
-    margin-top: 42px;
-  }
-
-  .grader {
-    height: 85vh;
-    border: 1px solid var(--tokens-fineLine);
-  }
-
-</style>

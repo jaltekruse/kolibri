@@ -17,10 +17,10 @@ const {
 } = lessonResponsesStrings;
 
 const LESSON_ID = 'lesson-id';
-const CONTENTNODE_ID = 'contentnode-id';
-const PROMPTS = [
-  { id: 'prompt-1', text: 'What is the main idea of section 1?' },
-  { id: 'prompt-2', text: 'Solve problem 3 on page 4' },
+const ITEM_ID = 'contentnode-id';
+const PROBLEMS = [
+  { key: 'prompt-1', number: '1', prompt: 'What is the main idea of section 1?' },
+  { key: 'prompt-2', number: '2', prompt: 'Solve problem 3 on page 4' },
 ];
 // Stand in for base64 encoded Free Math documents
 const SAVED_WORK = 'c2F2ZWQgd29yaw==';
@@ -36,14 +36,15 @@ function response(item, document, complete = false) {
   };
 }
 
-function renderPanel({ responses = [] } = {}) {
+function renderPanel({ responses = [], instructions = '' } = {}) {
   LessonResponseResource.list.mockResolvedValue(responses);
   LessonResponseResource.saveAnswers.mockResolvedValue([]);
   return render(LessonResponsesPanel, {
     props: {
       lessonId: LESSON_ID,
-      contentnodeId: CONTENTNODE_ID,
-      prompts: PROMPTS,
+      itemId: ITEM_ID,
+      problems: PROBLEMS,
+      instructions,
       title: 'Photosynthesis reading',
     },
   });
@@ -96,7 +97,7 @@ describe('LessonResponsesPanel', () => {
 
     expect(LessonResponseResource.list).toHaveBeenCalledWith({
       lesson_id: LESSON_ID,
-      contentnode_id: CONTENTNODE_ID,
+      item_id: ITEM_ID,
     });
     expect(loadMessages(sent)).toEqual([
       {
@@ -105,8 +106,8 @@ describe('LessonResponsesPanel', () => {
         title: 'Photosynthesis reading',
         readOnly: false,
         problems: [
-          { key: 'prompt-1', number: '1', prompt: PROMPTS[0].text, content: SAVED_WORK },
-          { key: 'prompt-2', number: '2', prompt: PROMPTS[1].text, content: '' },
+          { ...PROBLEMS[0], content: SAVED_WORK },
+          { ...PROBLEMS[1], content: '' },
         ],
       },
     ]);
@@ -122,7 +123,7 @@ describe('LessonResponsesPanel', () => {
     await waitFor(() =>
       expect(LessonResponseResource.saveAnswers).toHaveBeenCalledWith({
         lessonId: LESSON_ID,
-        contentnodeId: CONTENTNODE_ID,
+        itemId: ITEM_ID,
         answers: { 'prompt-2': NEW_WORK },
       }),
     );
@@ -135,8 +136,8 @@ describe('LessonResponsesPanel', () => {
 
     expect(await screen.findByTestId('submitted-status')).toHaveTextContent(submittedStatus$());
     expect(LessonResponseResource.saveAnswers.mock.calls).toEqual([
-      [{ lessonId: LESSON_ID, contentnodeId: CONTENTNODE_ID, answers: { 'prompt-2': NEW_WORK } }],
-      [{ lessonId: LESSON_ID, contentnodeId: CONTENTNODE_ID, answers: {}, submit: true }],
+      [{ lessonId: LESSON_ID, itemId: ITEM_ID, answers: { 'prompt-2': NEW_WORK } }],
+      [{ lessonId: LESSON_ID, itemId: ITEM_ID, answers: {}, submit: true }],
     ]);
     // The editor shows the submitted work, which can no longer be changed
     const reloaded = loadMessages(sent).pop();
@@ -170,9 +171,15 @@ describe('LessonResponsesPanel', () => {
   it('shows an error when the answers fail to load', async () => {
     LessonResponseResource.list.mockRejectedValue(new Error('Network error'));
     render(LessonResponsesPanel, {
-      props: { lessonId: LESSON_ID, contentnodeId: CONTENTNODE_ID, prompts: PROMPTS },
+      props: { lessonId: LESSON_ID, itemId: ITEM_ID, problems: PROBLEMS },
     });
     expect(await screen.findByRole('alert')).toHaveTextContent(loadErrorStatus$());
     expect(screen.queryByTitle(mathEditorLabel$())).not.toBeInTheDocument();
+  });
+
+  it("shows the coach's instructions", async () => {
+    renderPanel({ instructions: 'Solve the odd problems' });
+    await openEditor();
+    expect(screen.getByTestId('instructions')).toHaveTextContent('Solve the odd problems');
   });
 });

@@ -5,16 +5,17 @@ import LessonResponseResource from 'kolibri-common/apiResources/LessonResponseRe
 export const AUTOSAVE_DELAY = 1000;
 
 /**
- * The current learner's answers to the prompts on a lesson resource. Each answer is
- * a Free Math document, which also holds the coach's grading once they have graded it.
+ * The current learner's answers to the prompts on a lesson item: the questions on a
+ * lesson resource, or the problems listed for a lesson web page. Each answer is a Free
+ * Math document, which also holds the coach's grading once they have graded it.
  * Answers are saved automatically as the learner works, until they are submitted.
- * @param {string} lessonId - The lesson the resource is in
- * @param {string} contentnodeId - The resource the prompts are about
+ * @param {string} lessonId - The lesson the item is in
+ * @param {string} itemId - The resource's contentnode_id, or the web page's id
  * @returns {object} The answers and save state, and functions to change answers,
  * save them now, submit them, and reload them
  */
-export default function useLessonResponses(lessonId, contentnodeId) {
-  const params = { lesson_id: lessonId, contentnode_id: contentnodeId };
+export default function useLessonResponses(lessonId, itemId) {
+  const params = { lesson_id: lessonId, item_id: itemId };
 
   // Base64 encoded Free Math documents keyed by prompt id
   const answers = ref({});
@@ -58,7 +59,7 @@ export default function useLessonResponses(lessonId, contentnodeId) {
       for (const promptId of promptIds) {
         await LessonResponseResource.saveAnswers({
           lessonId,
-          contentnodeId,
+          itemId,
           answers: { [promptId]: answers.value[promptId] },
         });
         unsent.delete(promptId);
@@ -66,7 +67,7 @@ export default function useLessonResponses(lessonId, contentnodeId) {
       if (submit) {
         await LessonResponseResource.saveAnswers({
           lessonId,
-          contentnodeId,
+          itemId,
           answers: {},
           submit,
         });

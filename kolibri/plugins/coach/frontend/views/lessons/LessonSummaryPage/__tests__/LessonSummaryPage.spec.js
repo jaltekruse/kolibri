@@ -3,6 +3,7 @@ import '@testing-library/jest-dom';
 import VueRouter from 'vue-router';
 import useUser, { useUserMock } from 'kolibri/composables/useUser'; // eslint-disable-line import-x/named
 import logger from 'kolibri-logging';
+import LessonWebPageResource from 'kolibri-common/apiResources/LessonWebPageResource';
 import useSidePanelTitle from '../../../../composables/useSidePanelTitle';
 import makeStore from '../../../../__tests__/utils/makeStore';
 import store from '../../../../store';
@@ -24,6 +25,7 @@ jest.mock('kolibri-common/composables/useChannels');
 jest.mock('../../../../modules/lessonSummary/handlers');
 jest.mock('../../../../composables/fetchClassSyncStatus');
 jest.mock('kolibri/urls');
+jest.mock('kolibri-common/apiResources/LessonWebPageResource');
 jest.mock('kolibri/router', () => ({
   getRoute: jest.fn((name, params) => ({ name, params })),
   getReactiveRoute: jest.fn(() => ({ params: {} })),
@@ -87,6 +89,7 @@ describe('LessonSummaryPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     useUser.mockImplementation(() => useUserMock({ isCoach: true }));
+    LessonWebPageResource.list.mockResolvedValue([]);
   });
 
   it('logs no title error once its lesson is gone from the class summary', async () => {

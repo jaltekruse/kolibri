@@ -62,6 +62,11 @@
                 @change="handleResourcesChange"
                 @editPrompts="resourceForPrompts = $event"
               />
+              <LessonWebPages
+                :classId="classId"
+                :lessonId="lessonId"
+                :editable="editable && !$isPrint"
+              />
             </template>
             <template #[ReportsLessonTabs.LEARNERS]>
               <LessonLearnersTable
@@ -114,6 +119,7 @@
   import LessonOptionsDropdownMenu from './LessonOptionsDropdownMenu';
   import ManageLessonModals from './ManageLessonModals';
   import LessonResourcePromptsModal from './LessonResourcePromptsModal';
+  import LessonWebPages from './LessonWebPages';
 
   const REMOVAL_SNACKBAR_TIME = 5000;
 
@@ -127,6 +133,7 @@
       LessonOptionsDropdownMenu,
       LessonLearnersTable,
       LessonResourcesTable,
+      LessonWebPages,
     },
     mixins: [commonCoach, commonCoreStrings],
     setup() {
