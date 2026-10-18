@@ -104,6 +104,24 @@ const commands = {
   'scope-text': rest => {
     scope = page.locator('[data-testid]').filter({ hasText: rest }).last();
   },
+  // frame <iframe title>   (act inside an iframe, e.g. the Free Math editor; scope - to leave)
+  frame: rest => {
+    scope = page.frameLocator(`iframe[title="${rest}"]`);
+  },
+  // dismiss   (closes a modal if one opens within 10s, like "Resource completed")
+  dismiss: async () => {
+    const dialog = page.getByRole('dialog').first();
+    if (await dialog.waitFor({ timeout: 10000 }).then(() => true, () => false)) {
+      await dialog.getByRole('button', { name: 'Close', exact: true }).first().click();
+      await dialog.waitFor({ state: 'detached', timeout: 10000 });
+    }
+  },
+  // click-css <css selector>   (for elements with no role, like a math field)
+  'click-css': rest => root().locator(rest).first().click({ timeout: 30000 }),
+  // type <text>   (types into whatever has focus; \n presses Enter)
+  type: rest => page.keyboard.type(unescape(rest), { delay: 30 }),
+  // press <key>   (e.g. press Enter, press Tab)
+  press: rest => page.keyboard.press(rest),
   // value <textbox accessible name>   (print what a textbox holds)
   value: async rest =>
     console.log(JSON.stringify(await root().getByRole('textbox', { name: rest }).first().inputValue())),
