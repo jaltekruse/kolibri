@@ -12,22 +12,21 @@
     >
       {{ learnerAnswersLoadError$() }}
     </p>
-    <template v-else>
-      <LearnerResponses
-        v-for="learner in learners"
-        :key="learner.id"
-        :data-testid="`learner-${learner.id}`"
-        :lessonId="lessonId"
-        :contentnodeId="contentnodeId"
-        :learnerId="learner.id"
-        :learnerName="learner.name"
-        :prompts="prompts"
-        :answers="responsesFor(learner).answers"
-        :submitted="responsesFor(learner).submitted"
-        :feedback="feedbackByLearner[learner.id] || null"
-        @feedbackSaved="setFeedback"
-      />
-    </template>
+    <p
+      v-else-if="!students.length"
+      data-testid="no-answers"
+    >
+      {{ noAnswersYetStatus$() }}
+    </p>
+    <FreeMathFrame
+      v-else
+      ref="grader"
+      class="grader"
+      mode="grader"
+      :title="gradingEditorLabel$()"
+      @ready="showWork"
+      @saveGrades="saveGrades"
+    />
   </section>
 
 </template>
@@ -35,33 +34,32 @@
 
 <script>
 
-  import { ref } from 'vue';
+  import { computed, ref } from 'vue';
+  import FreeMathFrame from 'kolibri-common/components/FreeMathFrame';
   import LessonResource from 'kolibri-common/apiResources/LessonResource';
   import LessonResponseResource from 'kolibri-common/apiResources/LessonResponseResource';
-  import LessonResponseFeedbackResource from 'kolibri-common/apiResources/LessonResponseFeedbackResource';
   import { lessonResponsesStrings } from 'kolibri-common/strings/lessonResponsesStrings';
-  import LearnerResponses from './LearnerResponses';
-
-  const NO_RESPONSES = Object.freeze({ answers: {}, submitted: false });
 
   /**
-   * Learners' answers to the questions a coach wrote about a lesson resource,
-   * and the coach's feedback on them. Shows nothing if the resource has no questions.
+   * Learners' work on the questions a coach wrote about a lesson resource, in Free Math's
+   * grading view, which groups similar answers to each question. The coach's scores and
+   * feedback are saved into each learner's answer. Shows nothing if the resource has no
+   * questions.
    */
   export default {
     name: 'LessonResourceResponses',
     components: {
-      LearnerResponses,
+      FreeMathFrame,
     },
     setup(props) {
+      const grader = ref(null);
+      const lessonTitle = ref('');
       const prompts = ref([]);
       const contentnodeId = ref(null);
       const loading = ref(true);
       const loadError = ref(null);
-      // {answers, submitted} keyed by learner id
-      const responsesByLearner = ref({});
-      // Feedback keyed by learner id
-      const feedbackByLearner = ref({});
+      // Free Math documents keyed by learner id, then prompt id
+      const answersByLearner = ref({});
 
       async function load() {
         try {
@@ -72,26 +70,21 @@
           if (!resource) {
             return;
           }
+          lessonTitle.value = lesson.title;
           contentnodeId.value = resource.contentnode_id;
           prompts.value = resource.prompts;
-          const params = { lesson_id: props.lessonId, contentnode_id: resource.contentnode_id };
-          const [responses, feedbackList] = await Promise.all([
-            LessonResponseResource.list(params),
-            LessonResponseFeedbackResource.list(params),
-          ]);
+          const responses = await LessonResponseResource.list({
+            lesson_id: props.lessonId,
+            contentnode_id: resource.contentnode_id,
+          });
           const byLearner = {};
           for (const response of responses) {
-            if (!byLearner[response.user]) {
-              byLearner[response.user] = { answers: {}, submitted: false };
-            }
-            byLearner[response.user].answers[response.item] = response.answer.text;
-            byLearner[response.user].submitted =
-              byLearner[response.user].submitted || response.complete;
+            byLearner[response.user] = {
+              ...byLearner[response.user],
+              [response.item]: response.answer.free_math,
+            };
           }
-          responsesByLearner.value = byLearner;
-          feedbackByLearner.value = Object.fromEntries(
-            feedbackList.map(feedback => [feedback.user, feedback]),
-          );
+          answersByLearner.value = byLearner;
         } catch (error) {
           // If the lesson itself failed to load, it is unknown whether the resource
           // has questions, so nothing is shown.
@@ -101,28 +94,77 @@
         }
       }
 
-      function responsesFor(learner) {
-        return responsesByLearner.value[learner.id] || NO_RESPONSES;
+      // Learners with answers, with their answers in the order of the questions
+      const students = computed(() =>
+        props.learners
+          .filter(learner => answersByLearner.value[learner.id])
+          .map(learner => ({
+            id: learner.id,
+            name: learner.name,
+            problems: prompts.value
+              .map((prompt, index) => ({
+                key: prompt.id,
+                number: String(index + 1),
+                prompt: prompt.text,
+                content: answersByLearner.value[learner.id][prompt.id],
+              }))
+              .filter(problem => problem.content),
+          })),
+      );
+
+      function showWork() {
+        grader.value.send('load-grading', {
+          title: lessonTitle.value,
+          students: students.value,
+        });
       }
 
-      function setFeedback(feedback) {
-        feedbackByLearner.value = { ...feedbackByLearner.value, [feedback.user]: feedback };
+      /**
+       * Save grading done in the editor, one learner at a time to keep requests small.
+       * @param {{[learnerId: string]: {[promptId: string]: string}}} grades - Graded Free Math
+       * documents
+       * @param {function(boolean): void} respond - Tells the editor whether they were saved
+       */
+      async function saveGrades(grades, respond) {
+        try {
+          for (const [learnerId, documents] of Object.entries(grades)) {
+            await LessonResponseResource.grade({
+              lessonId: props.lessonId,
+              contentnodeId: contentnodeId.value,
+              grades: { [learnerId]: documents },
+            });
+            answersByLearner.value = {
+              ...answersByLearner.value,
+              [learnerId]: { ...answersByLearner.value[learnerId], ...documents },
+            };
+          }
+          respond(true);
+        } catch (error) {
+          respond(false);
+        }
       }
 
       load();
 
-      const { learnerAnswersLabel$, learnerAnswersLoadError$ } = lessonResponsesStrings;
+      const {
+        gradingEditorLabel$,
+        learnerAnswersLabel$,
+        learnerAnswersLoadError$,
+        noAnswersYetStatus$,
+      } = lessonResponsesStrings;
 
       return {
-        contentnodeId,
-        feedbackByLearner,
+        grader,
         loadError,
         loading,
         prompts,
-        responsesFor,
-        setFeedback,
+        students,
+        saveGrades,
+        showWork,
+        gradingEditorLabel$,
         learnerAnswersLabel$,
         learnerAnswersLoadError$,
+        noAnswersYetStatus$,
       };
     },
     props: {
@@ -150,6 +192,11 @@
 
   .lesson-resource-responses {
     margin-top: 42px;
+  }
+
+  .grader {
+    height: 85vh;
+    border: 1px solid var(--tokens-fineLine);
   }
 
 </style>

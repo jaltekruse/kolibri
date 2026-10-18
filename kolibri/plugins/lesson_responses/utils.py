@@ -4,7 +4,9 @@ so this plugin needs no tables of its own:
 
 - one ContentSummaryLog and one MasteryLog per learner per lesson resource, under a
   content_id derived from the lesson and resource ids;
-- one AttemptLog per answered prompt, with the prompt id as its item.
+- one AttemptLog per answered prompt, with the prompt id as its item. Its answer
+  holds the learner's work as a base64 encoded Free Math document, which is also
+  where the coach's score, feedback and highlights go when they grade it.
 
 Submitting completes the MasteryLog and its AttemptLogs, and sets progress to 1.
 """
@@ -19,12 +21,12 @@ RESPONSE_KIND = "lesson_response"
 # Answers are collected in a single round, until resubmission is supported.
 RESPONSE_MASTERY_LEVEL = 1
 
-MAX_ANSWER_LENGTH = 10000
+# Key of the Free Math document in AttemptLog.answer
+ANSWER_KEY = "free_math"
 
-MAX_COMMENT_LENGTH = 10000
-
-# AttemptLog.simple_answer is a CharField of this length.
-SIMPLE_ANSWER_LENGTH = 200
+# Base64 characters in one answer's document, so that saving one answer stays
+# under Django's default DATA_UPLOAD_MAX_MEMORY_SIZE of 2.5 MB per request.
+MAX_ANSWER_LENGTH = 2 * 1024 * 1024
 
 
 def get_response_content_id(lesson_id, contentnode_id):

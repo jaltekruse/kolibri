@@ -40,63 +40,14 @@
         {{ questionsDescription$() }}
       </p>
 
-      <div
-        v-if="feedback && feedback.comment"
-        class="feedback"
-        data-testid="overall-feedback"
-      >
-        <h3 class="feedback-heading">
-          {{ coachFeedbackLabel$() }}
-        </h3>
-        <p>
-          <span class="multiline-text">{{ feedback.comment }}</span>
-        </p>
-      </div>
-
-      <ol class="prompts">
-        <li
-          v-for="(prompt, index) in prompts"
-          :key="prompt.id"
-          class="prompt"
-        >
-          <h3 class="prompt-heading">
-            {{ questionNumberLabel$({ number: index + 1 }) }}
-          </h3>
-          <p>
-            <span class="multiline-text">{{ prompt.text }}</span>
-          </p>
-
-          <KTextbox
-            v-if="!submitted"
-            :value="answers[prompt.id] || ''"
-            :label="answerToQuestionLabel$({ number: index + 1 })"
-            :textArea="true"
-            :maxlength="MAX_ANSWER_LENGTH"
-            @input="text => setAnswer(prompt.id, text)"
-            @blur="saveNow"
-          />
-          <p
-            v-else
-            class="answer"
-            :data-testid="`answer-${prompt.id}`"
-          >
-            <span class="multiline-text">{{ answers[prompt.id] || noAnswerLabel$() }}</span>
-          </p>
-
-          <div
-            v-if="promptFeedback(prompt)"
-            class="feedback"
-            :data-testid="`feedback-${prompt.id}`"
-          >
-            <h4 class="feedback-heading">
-              {{ coachFeedbackLabel$() }}
-            </h4>
-            <p>
-              <span class="multiline-text">{{ promptFeedback(prompt) }}</span>
-            </p>
-          </div>
-        </li>
-      </ol>
+      <FreeMathFrame
+        ref="editor"
+        class="editor"
+        mode="student"
+        :title="mathEditorLabel$()"
+        @ready="showWork"
+        @save="setAnswers"
+      />
 
       <div
         v-if="!submitted"
@@ -144,20 +95,24 @@
 
 <script>
 
-  import { computed, getCurrentInstance, ref } from 'vue';
+  import { computed, getCurrentInstance, ref, watch } from 'vue';
   import { coreStrings } from 'kolibri/uiText/commonCoreStrings';
+  import FreeMathFrame from 'kolibri-common/components/FreeMathFrame';
   import { lessonResponsesStrings } from 'kolibri-common/strings/lessonResponsesStrings';
   import useLessonResponses from '../../composables/useLessonResponses';
 
-  // Matches the server's limit on the length of an answer
-  const MAX_ANSWER_LENGTH = 10000;
-
+  /**
+   * The questions a coach wrote about a lesson resource, which learners answer by
+   * showing their work in the Free Math editor.
+   */
   export default {
     name: 'LessonResponsesPanel',
+    components: {
+      FreeMathFrame,
+    },
     setup(props) {
       const {
         answers,
-        feedback,
         hasUnsavedAnswers,
         loadError,
         loading,
@@ -166,24 +121,22 @@
         submitted,
         load,
         saveNow,
-        setAnswer,
+        setAnswers,
         submit,
       } = useLessonResponses(props.lessonId, props.contentnodeId);
 
+      const editor = ref(null);
       const showSubmitModal = ref(false);
       const headingId = `lesson-responses-${getCurrentInstance().uid}`;
 
       const answeredCount = computed(
-        () => props.prompts.filter(prompt => (answers.value[prompt.id] || '').trim()).length,
+        () => props.prompts.filter(prompt => answers.value[prompt.id]).length,
       );
       const unansweredCount = computed(() => props.prompts.length - answeredCount.value);
 
       const {
-        answerToQuestionLabel$,
-        coachFeedbackLabel$,
         loadErrorStatus$,
-        noAnswerLabel$,
-        questionNumberLabel$,
+        mathEditorLabel$,
         questionsDescription$,
         questionsLabel$,
         savedStatus$,
@@ -211,20 +164,37 @@
         return '';
       });
 
-      function promptFeedback(prompt) {
-        return feedback.value?.prompt_comments?.[prompt.id] || '';
+      // Send the questions, with the learner's work on them, to the editor
+      function showWork() {
+        editor.value.send('load-student', {
+          title: props.title,
+          readOnly: submitted.value,
+          problems: props.prompts.map((prompt, index) => ({
+            key: prompt.id,
+            number: String(index + 1),
+            prompt: prompt.text,
+            content: answers.value[prompt.id] || '',
+          })),
+        });
       }
+
+      // Submitted work can no longer be changed
+      watch(submitted, isSubmitted => {
+        if (isSubmitted && editor.value) {
+          showWork();
+        }
+      });
 
       async function handleSubmit() {
         showSubmitModal.value = false;
+        // Include the work the editor has not sent yet
+        await editor.value.flush();
         await submit();
       }
 
       return {
-        MAX_ANSWER_LENGTH,
-        answers,
         answeredCount,
-        feedback,
+        editor,
         headingId,
         loadError,
         loading,
@@ -236,15 +206,12 @@
         unansweredCount,
         handleSubmit,
         load,
-        promptFeedback,
         saveNow,
-        setAnswer,
-        answerToQuestionLabel$,
+        setAnswers,
+        showWork,
         cancelAction$,
-        coachFeedbackLabel$,
         loadErrorStatus$,
-        noAnswerLabel$,
-        questionNumberLabel$,
+        mathEditorLabel$,
         questionsDescription$,
         questionsLabel$,
         submitAnswersAction$,
@@ -269,6 +236,11 @@
         type: Array,
         required: true,
       },
+      // Title of the resource, shown in the editor
+      title: {
+        type: String,
+        default: '',
+      },
     },
   };
 
@@ -278,6 +250,8 @@
 <style lang="scss" scoped>
 
   .lesson-responses-panel {
+    display: flex;
+    flex-direction: column;
     padding: 16px;
     background-color: var(--tokens-surface);
   }
@@ -286,44 +260,15 @@
     margin-top: 0;
   }
 
-  .prompts {
-    padding: 0;
-    margin: 0;
-    list-style: none;
-  }
-
-  .prompt {
-    padding: 16px 0;
-    border-top: 1px solid var(--tokens-fineLine);
-  }
-
-  .prompt-heading {
-    margin: 0 0 8px;
-    font-size: 16px;
-  }
-
-  .multiline-text {
-    white-space: pre-wrap;
-  }
-
-  .answer {
-    padding: 8px;
-    background-color: var(--palette-grey-v100);
-  }
-
   .status {
     font-weight: bold;
   }
 
-  .feedback {
-    padding: 8px 12px;
-    margin-top: 8px;
-    border-left: 4px solid var(--tokens-primary);
-  }
-
-  .feedback-heading {
-    margin: 0;
-    font-size: 14px;
+  .editor {
+    // Fills the panel when it has a fixed height, and is this tall otherwise
+    flex: 1 1 75vh;
+    min-height: 400px;
+    border: 1px solid var(--tokens-fineLine);
   }
 
   .footer {
@@ -332,7 +277,6 @@
     align-items: center;
     justify-content: flex-end;
     padding-top: 16px;
-    border-top: 1px solid var(--tokens-fineLine);
 
     > * {
       margin-left: 16px;

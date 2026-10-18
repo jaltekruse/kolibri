@@ -1,14 +1,16 @@
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
+from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from kolibri.core.api import HexUUIDField
 from kolibri.core.api import ReadOnlyValuesViewset
-from kolibri.core.api import ValuesViewset
+from kolibri.core.auth.constants import role_kinds
 from kolibri.core.auth.permissions import KolibriAuthPermissions
 from kolibri.core.auth.permissions import KolibriAuthPermissionsFilter
 from kolibri.core.lessons.models import Lesson
@@ -18,13 +20,11 @@ from kolibri.core.logger.models import ContentSummaryLog
 from kolibri.core.logger.models import MasteryLog
 from kolibri.utils.time_utils import local_now
 
-from .models import LessonResponseFeedback
+from .utils import ANSWER_KEY
 from .utils import get_response_content_id
 from .utils import MAX_ANSWER_LENGTH
-from .utils import MAX_COMMENT_LENGTH
 from .utils import RESPONSE_KIND
 from .utils import RESPONSE_MASTERY_LEVEL
-from .utils import SIMPLE_ANSWER_LENGTH
 
 
 class LessonResourceSerializer(serializers.Serializer):
@@ -32,14 +32,24 @@ class LessonResourceSerializer(serializers.Serializer):
     contentnode_id = HexUUIDField()
 
 
+def free_math_document_field():
+    """A base64 encoded Free Math document, blank for no answer."""
+    return serializers.RegexField(
+        r"^[A-Za-z0-9+/]*={0,2}$", allow_blank=True, max_length=MAX_ANSWER_LENGTH
+    )
+
+
 class SaveAnswersSerializer(LessonResourceSerializer):
     # Keyed by prompt id
-    answers = serializers.DictField(
-        child=serializers.CharField(
-            allow_blank=True, trim_whitespace=False, max_length=MAX_ANSWER_LENGTH
-        )
-    )
+    answers = serializers.DictField(child=free_math_document_field())
     submit = serializers.BooleanField(default=False)
+
+
+class GradeSerializer(LessonResourceSerializer):
+    # Keyed by learner id, then prompt id
+    grades = serializers.DictField(
+        child=serializers.DictField(child=free_math_document_field())
+    )
 
 
 class LessonResponseSerializer(serializers.ModelSerializer):
@@ -60,6 +70,11 @@ def _get_prompted_resource(lesson, contentnode_id):
         if resource["contentnode_id"] == contentnode_id and resource.get("prompts"):
             return resource
     raise ValidationError({"contentnode_id": "This lesson resource has no prompts"})
+
+
+def _validate_prompt_ids(resource, prompt_ids, field):
+    if not {prompt["id"] for prompt in resource["prompts"]}.issuperset(prompt_ids):
+        raise ValidationError({field: "Answers must be for this resource's prompts"})
 
 
 def _get_or_create_sessionlog(user, lesson_id, resource, content_id, now):
@@ -112,10 +127,10 @@ def _save_answers(user, lesson_id, resource, answers, submit):
     attemptlogs = {
         attemptlog.item: attemptlog for attemptlog in masterylog.attemptlogs.all()
     }
-    for prompt_id, text in answers.items():
+    for prompt_id, document in answers.items():
         attemptlog = attemptlogs.get(prompt_id)
         if attemptlog is None:
-            if not text:
+            if not document:
                 continue
             attemptlog = AttemptLog(
                 user=user,
@@ -126,10 +141,9 @@ def _save_answers(user, lesson_id, resource, answers, submit):
                 correct=0,
             )
             attemptlogs[prompt_id] = attemptlog
-        elif (attemptlog.answer or {}).get("text") == text:
+        elif (attemptlog.answer or {}).get(ANSWER_KEY) == document:
             continue
-        attemptlog.answer = {"text": text}
-        attemptlog.simple_answer = text[:SIMPLE_ANSWER_LENGTH]
+        attemptlog.answer = {ANSWER_KEY: document}
         attemptlog.end_timestamp = now
         attemptlog.save()
 
@@ -154,8 +168,9 @@ def _save_answers(user, lesson_id, resource, answers, submit):
 
 class LessonResponseViewset(ReadOnlyValuesViewset):
     """
-    Free-text answers to the prompts on one lesson resource, filtered by the
-    required ``lesson_id`` and ``contentnode_id`` query parameters.
+    Answers to the prompts on one lesson resource, filtered by the required
+    ``lesson_id`` and ``contentnode_id`` query parameters. Each answer is a Free
+    Math document, which also holds the coach's grading.
     Learners see their own answers; coaches see their learners' answers.
     """
 
@@ -189,11 +204,7 @@ class LessonResponseViewset(ReadOnlyValuesViewset):
             id=lesson_id,
         )
         resource = _get_prompted_resource(lesson, contentnode_id)
-        prompt_ids = {prompt["id"] for prompt in resource["prompts"]}
-        if not prompt_ids.issuperset(answers):
-            raise ValidationError(
-                {"answers": "Answers must be for this resource's prompts"}
-            )
+        _validate_prompt_ids(resource, answers, "answers")
 
         with transaction.atomic():
             _save_answers(
@@ -209,72 +220,45 @@ class LessonResponseViewset(ReadOnlyValuesViewset):
             )
         )
 
+    @action(detail=False, methods=["post"], permission_classes=(IsAuthenticated,))
+    def grade(self, request):
+        """
+        Save a coach's grading of learners' answers: for each learner, keyed by
+        learner id, the Free Math documents of their answers with the coach's
+        scores, feedback and highlights in them, keyed by prompt id.
+        Only answers that learners have saved can be graded.
+        """
+        serializer = GradeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        lesson_id = serializer.validated_data["lesson_id"]
+        contentnode_id = serializer.validated_data["contentnode_id"]
+        grades = serializer.validated_data["grades"]
 
-class LessonResponseFeedbackSerializer(serializers.ModelSerializer):
-    lesson_id = HexUUIDField()
-    contentnode_id = HexUUIDField()
-    comment = serializers.CharField(
-        allow_blank=True, required=False, max_length=MAX_COMMENT_LENGTH
-    )
-    # Keyed by prompt id
-    prompt_comments = serializers.DictField(
-        child=serializers.CharField(allow_blank=True, max_length=MAX_COMMENT_LENGTH),
-        required=False,
-    )
-
-    class Meta:
-        model = LessonResponseFeedback
-        fields = (
-            "id",
-            "user",
-            "lesson_id",
-            "contentnode_id",
-            "comment",
-            "prompt_comments",
-            "date_modified",
-        )
-        read_only_fields = ("id", "date_modified")
-
-    def validate(self, attrs):
-        lesson_id = attrs.get("lesson_id", getattr(self.instance, "lesson_id", None))
-        contentnode_id = attrs.get(
-            "contentnode_id", getattr(self.instance, "contentnode_id", None)
-        )
-        lesson = Lesson.objects.filter(id=lesson_id).first()
-        if lesson is None:
-            raise ValidationError({"lesson_id": "Lesson does not exist"})
+        lesson = get_object_or_404(Lesson, id=lesson_id)
         resource = _get_prompted_resource(lesson, contentnode_id)
-        prompt_ids = {prompt["id"] for prompt in resource["prompts"]}
-        if not prompt_ids.issuperset(attrs.get("prompt_comments", {})):
-            raise ValidationError(
-                {"prompt_comments": "Comments must be for this resource's prompts"}
-            )
-        return attrs
+        attemptlogs = {
+            (attemptlog.user_id, attemptlog.item): attemptlog
+            for attemptlog in _get_responses(lesson_id, contentnode_id)
+            .filter(user_id__in=grades)
+            .select_related("user")
+        }
+        for user_id, documents in grades.items():
+            _validate_prompt_ids(resource, documents, "grades")
+            for prompt_id in documents:
+                attemptlog = attemptlogs.get((user_id, prompt_id))
+                if attemptlog is None:
+                    raise ValidationError(
+                        {"grades": "Only saved answers can be graded"}
+                    )
+                if not request.user.has_role_for_user(
+                    (role_kinds.ADMIN, role_kinds.COACH), attemptlog.user
+                ):
+                    raise PermissionDenied()
 
-    def update(self, instance, validated_data):
-        # These identify the feedback record, so they cannot change.
-        for field in ("user", "lesson_id", "contentnode_id"):
-            validated_data.pop(field, None)
-        validated_data["date_modified"] = local_now()
-        return super().update(instance, validated_data)
-
-
-class LessonResponseFeedbackViewset(ValuesViewset):
-    """
-    Coach feedback on learners' answers to the prompts on a lesson resource.
-    Listing requires the ``lesson_id`` and ``contentnode_id`` query parameters.
-    Learners can read their own feedback; coaches can read and write feedback
-    for learners in their classes.
-    """
-
-    permission_classes = (IsAuthenticated, KolibriAuthPermissions)
-    filter_backends = (KolibriAuthPermissionsFilter,)
-    serializer_class = LessonResponseFeedbackSerializer
-
-    def get_queryset(self):
-        queryset = LessonResponseFeedback.objects.order_by("user_id")
-        if self.action != "list":
-            return queryset
-        params = LessonResourceSerializer(data=self.request.query_params)
-        params.is_valid(raise_exception=True)
-        return queryset.filter(**params.validated_data)
+        with transaction.atomic():
+            for user_id, documents in grades.items():
+                for prompt_id, document in documents.items():
+                    attemptlog = attemptlogs[(user_id, prompt_id)]
+                    attemptlog.answer = {ANSWER_KEY: document}
+                    attemptlog.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)

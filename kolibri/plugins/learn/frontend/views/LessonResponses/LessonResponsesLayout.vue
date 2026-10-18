@@ -13,6 +13,7 @@
       :lessonId="lessonId"
       :contentnodeId="contentnodeId"
       :prompts="prompts"
+      :title="title"
     />
   </div>
 
@@ -70,6 +71,11 @@
         type: String,
         default: null,
       },
+      // Title of the resource
+      title: {
+        type: String,
+        default: '',
+      },
     },
   };
 
@@ -88,9 +94,10 @@
     }
 
     .responses {
-      flex: 0 0 400px;
-      // Same height as the content viewer, so learners can scroll through the
-      // questions while the resource stays in view
+      // The math editor needs room for steps of work
+      flex: 0 0 50%;
+      // Same height as the content viewer, so the resource stays in view
+      // while learners work on the questions
       height: calc(100vh - 61px);
       overflow-y: auto;
       border-left: 1px solid var(--tokens-fineLine);

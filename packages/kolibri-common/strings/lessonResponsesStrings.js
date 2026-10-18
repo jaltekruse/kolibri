@@ -6,20 +6,18 @@ export const lessonResponsesStrings = createTranslator('LessonResponsesStrings',
     context: 'Heading for the questions a coach wrote for learners to answer about a resource.',
   },
   questionsDescription: {
-    message: 'Answer these questions about this resource in your own words.',
-    context: 'Instructions shown to learners above the questions they answer about a resource.',
+    message: 'Show your work for each question about this resource in the math editor.',
+    context:
+      'Instructions shown to learners above the math editor where they answer questions about a resource.',
+  },
+  mathEditorLabel: {
+    message: 'Math editor for your answers',
+    context:
+      'Accessible name of the math editor where a learner shows their work on the questions about a resource.',
   },
   questionNumberLabel: {
     message: 'Question {number, number}',
     context: 'Label for one of the questions a coach wrote about a resource.',
-  },
-  answerToQuestionLabel: {
-    message: 'Answer to question {number, number}',
-    context: 'Label for the box where a learner types their answer to a question.',
-  },
-  noAnswerLabel: {
-    message: 'No answer',
-    context: 'Shown in place of an answer when a learner did not answer a question.',
   },
   savingStatus: {
     message: 'Saving…',
@@ -62,17 +60,9 @@ export const lessonResponsesStrings = createTranslator('LessonResponsesStrings',
     message: 'Submitted',
     context: 'Status of answers that a learner has submitted to their coach.',
   },
-  inProgressStatus: {
-    message: 'Not submitted yet',
-    context: 'Status of answers that a learner has started but not submitted.',
-  },
-  notStartedStatus: {
-    message: 'No answers yet',
-    context: 'Status for a learner who has not answered any questions about a resource.',
-  },
-  coachFeedbackLabel: {
-    message: 'Feedback from your coach',
-    context: "Heading for a coach's feedback, shown to the learner.",
+  noAnswersYetStatus: {
+    message: 'No learners have answered these questions yet.',
+    context: 'Shown to a coach in place of the learner answers to grade, when there are none.',
   },
   // Coach strings
   editQuestionsAction: {
@@ -87,7 +77,7 @@ export const lessonResponsesStrings = createTranslator('LessonResponsesStrings',
   },
   editQuestionsDescription: {
     message:
-      'Learners answer these questions in their own words while viewing this resource. You can refer to pages or sections of the resource.',
+      'Learners show their work on these questions in a math editor while viewing this resource. You can refer to pages or sections of the resource.',
     context: 'Instructions for a coach writing questions about a resource in a lesson.',
   },
   addQuestionAction: {
@@ -106,32 +96,9 @@ export const lessonResponsesStrings = createTranslator('LessonResponsesStrings',
     message: 'Learner answers could not be loaded. Refresh the page to try again.',
     context: "Shown to a coach when learners' answers to questions about a resource fail to load.",
   },
-  addFeedbackAction: {
-    message: 'Add feedback',
-    context: "Button for a coach to give feedback on a learner's answers.",
-  },
-  editFeedbackAction: {
-    message: 'Edit feedback',
-    context: "Button for a coach to change their feedback on a learner's answers.",
-  },
-  overallFeedbackLabel: {
-    message: 'Feedback on all answers',
-    context: "Label for a coach's feedback on all of a learner's answers together.",
-  },
-  answerFeedbackLabel: {
-    message: 'Feedback on this answer',
-    context: "Label for a coach's feedback on one of a learner's answers.",
-  },
-  feedbackLabel: {
-    message: 'Feedback',
-    context: "Label for a coach's feedback on a learner's answers.",
-  },
-  feedbackSavedMessage: {
-    message: 'Feedback saved',
-    context: 'Confirmation shown after a coach saves feedback for a learner.',
-  },
-  feedbackSaveError: {
-    message: 'Feedback could not be saved',
-    context: 'Shown when saving feedback for a learner fails.',
+  gradingEditorLabel: {
+    message: 'Math editor for grading learner answers',
+    context:
+      "Accessible name of the math editor where a coach grades learners' work on the questions about a resource, grouped by similar answers.",
   },
 });

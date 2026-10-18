@@ -64,6 +64,7 @@
       <LessonResponsesLayout
         :lessonId="isUserLoggedIn ? lessonId : null"
         :contentnodeId="content.id"
+        :title="content.title"
       >
         <ContentPage
           ref="contentPage"

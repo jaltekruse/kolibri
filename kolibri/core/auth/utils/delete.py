@@ -13,7 +13,6 @@ from morango.models import RecordMaxCounterBuffer
 from morango.models import Store
 from morango.models import SyncSession
 from morango.models import TransferSession
-from morango.registry import syncable_models
 
 from kolibri.core.analytics.models import PingbackNotificationDismissed
 from kolibri.core.attendance.models import AttendanceRecord
@@ -341,41 +340,16 @@ def _get_morango_models(dataset_id=None, user=None):
     return GroupDeletion("Morango models", groups=querysets)
 
 
-def _get_other_facility_models(dataset_id, listed_models):
-    """
-    Syncable facility models that are not listed explicitly, such as those
-    defined by plugins.
-    """
-    return GroupDeletion(
-        "Other facility models",
-        querysets=[
-            model.objects.filter(dataset_id=dataset_id)
-            for model in syncable_models.get_models("facilitydata")
-            if model not in listed_models
-        ],
-    )
-
-
 def get_delete_group_for_facility(facility):
     dataset_id = facility.dataset_id
-    log_models = _get_log_models(dataset_id)
-    class_models = _get_class_models(dataset_id)
-    users = _get_users(dataset_id)
-    listed_models = {FacilityDataset} | {
-        queryset.model
-        for group in (log_models, class_models, users)
-        for queryset in group.get_querysets()
-    }
     # everything should get cascade deleted from the facility, but we'll check anyway
     return GroupDeletion(
         "Main",
         groups=[
             _get_morango_models(dataset_id),
-            log_models,
-            # Deleted before classes and users, which these may reference
-            _get_other_facility_models(dataset_id, listed_models),
-            class_models,
-            users,
+            _get_log_models(dataset_id),
+            _get_class_models(dataset_id),
+            _get_users(dataset_id),
             _get_facility_dataset(dataset_id),
         ],
     )
