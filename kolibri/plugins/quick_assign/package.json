@@ -1,0 +1,17 @@
+{
+    "name": "kolibri-quick-assign-plugin",
+    "description": "Quick assignments anyone with the link can join",
+    "private": true,
+    "version": "0.0.1",
+    "dependencies": {
+        "kolibri": "workspace:*",
+        "kolibri-app": "workspace:*",
+        "kolibri-common": "workspace:*",
+        "kolibri-design-system": "catalog:",
+        "vue": "catalog:"
+    },
+    "devDependencies": {
+        "@testing-library/user-event": "catalog:",
+        "@testing-library/vue": "catalog:"
+    }
+}

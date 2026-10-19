@@ -56,15 +56,8 @@
   import { coreStrings } from 'kolibri/uiText/commonCoreStrings';
   import LessonWebPageResource from 'kolibri-common/apiResources/LessonWebPageResource';
   import { lessonResponsesStrings } from 'kolibri-common/strings/lessonResponsesStrings';
+  import { isWebAddress } from 'kolibri-common/utils/lessonResponses';
   import { coachStrings } from '../../common/commonCoachStrings';
-
-  function isWebAddress(value) {
-    try {
-      return ['http:', 'https:'].includes(new URL(value).protocol);
-    } catch (error) {
-      return false;
-    }
-  }
 
   /**
    * Adds a page from the web to a lesson, or changes one: where the page is, what

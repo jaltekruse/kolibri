@@ -21,6 +21,7 @@
       :contentKind="contentKind"
       :showBookmark="allowBookmark"
       :showDownloadButton="showDownloadButton"
+      :showQuickAssign="showQuickAssign"
       :isDownloading="isDownloading"
       :downloadingLoaderTooltip="downloadRequestsTranslator.$tr('downloadStartedLabel')"
       data-testid="learningActivityBar"
@@ -30,6 +31,7 @@
       @viewResourceList="toggleResourceList"
       @viewInfo="openSidePanel"
       @completionModal="openCompletionModal"
+      @quickAssign="quickAssign"
     />
     <KLinearLoader
       v-if="loading"
@@ -173,6 +175,8 @@
   import Modalities from 'kolibri-constants/Modalities';
 
   import AuthMessage from 'kolibri/components/AuthMessage';
+  import urls from 'kolibri/urls';
+  import redirectBrowser from 'kolibri/utils/redirectBrowser';
   import ContentNodeResource from 'kolibri-common/apiResources/ContentNodeResource';
   import useUser from 'kolibri/composables/useUser';
   import { error, handleApiError, clearError } from 'kolibri/utils/appError';
@@ -410,6 +414,10 @@
       contentProgress() {
         return this.content ? this.contentNodeProgressMap[this.content.content_id] : null;
       },
+      showQuickAssign() {
+        // Exercises from this device's library, which coaches can share with a link
+        return this.hasRole && !this.deviceId && this.contentKind === ContentNodeKinds.EXERCISE;
+      },
       contentKind() {
         return this.content ? this.content.kind : null;
       },
@@ -539,6 +547,10 @@
       this.initializeState();
     },
     methods: {
+      quickAssign() {
+        const coach = urls['kolibri:kolibri.plugins.coach:coach']();
+        redirectBrowser(`${coach}#/quick-assign?exercise=${this.content.id}`);
+      },
       initializeState() {
         this.bookmark = null;
         this.showViewResourcesSidePanel = false;

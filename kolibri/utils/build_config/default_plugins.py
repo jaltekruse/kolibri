@@ -7,6 +7,7 @@ DEFAULT_PLUGINS = [
     "kolibri.plugins.facility",
     "kolibri.plugins.learn",
     "kolibri.plugins.lesson_responses",
+    "kolibri.plugins.quick_assign",
     "kolibri.plugins.media_player",
     "kolibri.plugins.pdf_viewer",
     "kolibri.plugins.safe_html5_viewer",

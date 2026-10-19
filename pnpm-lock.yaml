@@ -951,6 +951,31 @@ importers:
         specifier: 'catalog:'
         version: 5.9.0(vue-template-compiler@2.7.16)(vue@2.7.16)
 
+  kolibri/plugins/quick_assign:
+    dependencies:
+      kolibri:
+        specifier: workspace:*
+        version: link:../../../packages/kolibri
+      kolibri-app:
+        specifier: workspace:*
+        version: link:../../../packages/kolibri-app
+      kolibri-common:
+        specifier: workspace:*
+        version: link:../../../packages/kolibri-common
+      kolibri-design-system:
+        specifier: 'catalog:'
+        version: 5.9.0
+      vue:
+        specifier: 'catalog:'
+        version: 2.7.16
+    devDependencies:
+      '@testing-library/user-event':
+        specifier: 'catalog:'
+        version: 14.6.1(@testing-library/dom@9.3.4)
+      '@testing-library/vue':
+        specifier: 'catalog:'
+        version: 5.9.0(vue-template-compiler@2.7.16)(vue@2.7.16)
+
   kolibri/plugins/safe_html5_viewer:
     dependencies:
       kolibri:
@@ -17163,7 +17188,7 @@ snapshots:
 
   kolibri-design-system@5.9.0:
     dependencies:
-      aphrodite: https://codeload.github.com/learningequality/aphrodite/tar.gz/fdc8d7be8912a5cf17f74ff10f124013c52c3e32
+      aphrodite: git+https://git@github.com:learningequality/aphrodite.git#fdc8d7be8912a5cf17f74ff10f124013c52c3e32
       autosize: 3.0.21
       color: 4.2.3
       css-element-queries: 1.2.0

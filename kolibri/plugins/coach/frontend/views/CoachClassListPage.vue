@@ -13,7 +13,14 @@
           icon="back"
         />
       </p>
-      <h1>{{ coreString('classesLabel') }}</h1>
+      <div class="heading">
+        <h1>{{ coreString('classesLabel') }}</h1>
+        <KRouterLink
+          appearance="raised-button"
+          :text="quickAssignAction$()"
+          :to="{ name: PageNames.QUICK_ASSIGN }"
+        />
+      </div>
       <p>{{ $tr('classPageSubheader') }}</p>
 
       <p v-if="classList.length === 0 && !dataLoading">
@@ -76,6 +83,7 @@
   import usePageTitle from 'kolibri/composables/usePageTitle';
   import useFacilities from 'kolibri-common/composables/useFacilities';
   import { pageLoading } from 'kolibri-common/composables/usePageLoading';
+  import { quickAssignStrings } from 'kolibri-common/strings/quickAssignStrings';
   import { PageNames } from '../constants';
   import CoachAppBarPage from './CoachAppBarPage';
   import commonCoach from './common';
@@ -92,7 +100,9 @@
       const { facilities, userIsMultiFacilityAdmin } = useFacilities();
       usePageTitle(() => coachStrings.classesLabel$(), { hasVisibleHeading: true });
       return {
+        PageNames,
         pageLoading,
+        quickAssignAction$: quickAssignStrings.quickAssignAction$,
         isAdmin,
         isClassCoach,
         isFacilityCoach,
@@ -180,4 +190,14 @@
 </script>
 
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+
+  .heading {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+</style>
