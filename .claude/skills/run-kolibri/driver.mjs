@@ -78,6 +78,8 @@ const commands = {
   login: rest => login(...rest.split(' ')),
   // nav <path>, e.g. nav /en/coach/#/<class_id>/lessons/<lesson_id>
   nav: rest => page.goto(`${BASE}${rest}`, { waitUntil: 'domcontentloaded' }),
+  // open <url>   (any address, such as a page of an app served beside Kolibri)
+  open: rest => page.goto(rest, { waitUntil: 'domcontentloaded' }),
   // click <role> <accessible name>, e.g. click button Save
   click: rest => byRole(rest).click({ timeout: 30000 }),
   // click-text <visible text>, for links/buttons without a usable role
@@ -118,6 +120,11 @@ const commands = {
   },
   // click-css <css selector>   (for elements with no role, like a math field)
   'click-css': rest => root().locator(rest).first().click({ timeout: 30000 }),
+  // upload <css selector of a file input> = <file path>
+  upload: rest => {
+    const [selector, file] = splitPair(rest);
+    return root().locator(selector).first().setInputFiles(file);
+  },
   // type <text>   (types into whatever has focus; \n presses Enter)
   type: rest => page.keyboard.type(unescape(rest), { delay: 30 }),
   // press <key>   (e.g. press Enter, press Tab)
