@@ -60,6 +60,7 @@
     "kolibri-logging": "workspace:*",
     "kolibri-plugin-data": "workspace:*",
     "rewire": "^6.0.0",
+    "vue": "catalog:",
     "vue-template-compiler": "2.7.16",
     "webpack": "^5.109.2"
   },
