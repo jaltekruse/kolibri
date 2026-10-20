@@ -17188,7 +17188,7 @@ snapshots:
 
   kolibri-design-system@5.9.0:
     dependencies:
-      aphrodite: git+https://git@github.com:learningequality/aphrodite.git#fdc8d7be8912a5cf17f74ff10f124013c52c3e32
+      aphrodite: https://codeload.github.com/learningequality/aphrodite/tar.gz/fdc8d7be8912a5cf17f74ff10f124013c52c3e32
       autosize: 3.0.21
       color: 4.2.3
       css-element-queries: 1.2.0
