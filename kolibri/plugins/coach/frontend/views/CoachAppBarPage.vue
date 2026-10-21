@@ -8,6 +8,7 @@
       :title="appBarTitle || defaultAppBarTitle"
       :showNavigation="Boolean(classId)"
       :loading="loading"
+      :fullWidth="fullWidth"
     >
       <div class="coach-main">
         <slot></slot>
@@ -43,6 +44,11 @@
         default: null,
       },
       loading: {
+        type: Boolean,
+        default: false,
+      },
+      // Lets the page use the whole width of the window, for wide content
+      fullWidth: {
         type: Boolean,
         default: false,
       },

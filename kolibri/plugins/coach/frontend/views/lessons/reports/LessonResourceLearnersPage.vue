@@ -1,6 +1,9 @@
 <template>
 
-  <CoachAppBarPage :loading="pageLoading">
+  <CoachAppBarPage
+    :loading="pageLoading"
+    fullWidth
+  >
     <KPageContainer>
       <ReportsResourceHeader
         :resource="resource"

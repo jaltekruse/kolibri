@@ -1,6 +1,9 @@
 <template>
 
-  <CoachAppBarPage :loading="pageLoading">
+  <CoachAppBarPage
+    :loading="pageLoading"
+    fullWidth
+  >
     <KGrid v-if="!pageLoading">
       <KGridItem>
         <QuizLessonDetailsHeader
