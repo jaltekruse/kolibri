@@ -111,6 +111,9 @@
           "@babel/parser": "^7.29.7"
         }
       }
+    },
+    "patchedDependencies": {
+      "@khanacademy/kas@2.2.3": "patches/@khanacademy__kas@2.2.3.patch"
     }
   }
 }

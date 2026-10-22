@@ -60,6 +60,11 @@ overrides:
 
 packageExtensionsChecksum: sha256-Cxa5WN7JgF+tmonooJc5B+gyBpR5dULZ04NCJlmlFBY=
 
+patchedDependencies:
+  '@khanacademy/kas@2.2.3':
+    hash: d243a0666a46593b6b5a66d2d265c3bffecab32d16d8e9e9e316594fad7c2a90
+    path: patches/@khanacademy__kas@2.2.3.patch
+
 importers:
 
   .:
@@ -703,7 +708,7 @@ importers:
     dependencies:
       '@khanacademy/kas':
         specifier: ^2.2.3
-        version: 2.2.3(underscore@1.13.8)
+        version: 2.2.3(patch_hash=d243a0666a46593b6b5a66d2d265c3bffecab32d16d8e9e9e316594fad7c2a90)(underscore@1.13.8)
       '@khanacademy/keypad-context':
         specifier: 3.2.65
         version: 3.2.65(@khanacademy/wonder-stuff-core@3.0.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(underscore@1.13.8)
@@ -11883,7 +11888,7 @@ snapshots:
 
   '@juggle/resize-observer@3.4.0': {}
 
-  '@khanacademy/kas@2.2.3(underscore@1.13.8)':
+  '@khanacademy/kas@2.2.3(patch_hash=d243a0666a46593b6b5a66d2d265c3bffecab32d16d8e9e9e316594fad7c2a90)(underscore@1.13.8)':
     dependencies:
       '@khanacademy/perseus-utils': 2.1.5
       underscore: 1.13.8
@@ -11937,7 +11942,7 @@ snapshots:
 
   '@khanacademy/perseus-core@28.2.0(@khanacademy/wonder-stuff-core@3.0.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(underscore@1.13.8)':
     dependencies:
-      '@khanacademy/kas': 2.2.3(underscore@1.13.8)
+      '@khanacademy/kas': 2.2.3(patch_hash=d243a0666a46593b6b5a66d2d265c3bffecab32d16d8e9e9e316594fad7c2a90)(underscore@1.13.8)
       '@khanacademy/perseus-utils': 2.1.5
       '@khanacademy/pure-markdown': 2.2.8(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@khanacademy/wonder-stuff-core': 3.0.0
@@ -11949,7 +11954,7 @@ snapshots:
 
   '@khanacademy/perseus-linter@5.1.4(@khanacademy/wonder-stuff-core@3.0.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(underscore@1.13.8)':
     dependencies:
-      '@khanacademy/kas': 2.2.3(underscore@1.13.8)
+      '@khanacademy/kas': 2.2.3(patch_hash=d243a0666a46593b6b5a66d2d265c3bffecab32d16d8e9e9e316594fad7c2a90)(underscore@1.13.8)
       '@khanacademy/kmath': 2.4.23(@khanacademy/wonder-stuff-core@3.0.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(underscore@1.13.8)
       '@khanacademy/perseus-core': 28.2.0(@khanacademy/wonder-stuff-core@3.0.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(underscore@1.13.8)
       '@khanacademy/perseus-utils': 2.1.5
@@ -11962,7 +11967,7 @@ snapshots:
 
   '@khanacademy/perseus-score@8.11.7(@khanacademy/wonder-stuff-core@3.0.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(underscore@1.13.8)':
     dependencies:
-      '@khanacademy/kas': 2.2.3(underscore@1.13.8)
+      '@khanacademy/kas': 2.2.3(patch_hash=d243a0666a46593b6b5a66d2d265c3bffecab32d16d8e9e9e316594fad7c2a90)(underscore@1.13.8)
       '@khanacademy/kmath': 2.4.23(@khanacademy/wonder-stuff-core@3.0.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(underscore@1.13.8)
       '@khanacademy/perseus-core': 28.2.0(@khanacademy/wonder-stuff-core@3.0.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(underscore@1.13.8)
       '@khanacademy/perseus-utils': 2.1.5
@@ -11976,7 +11981,7 @@ snapshots:
 
   '@khanacademy/perseus@78.2.0(b376967251bc45ad9c64c56a2c049092)':
     dependencies:
-      '@khanacademy/kas': 2.2.3(underscore@1.13.8)
+      '@khanacademy/kas': 2.2.3(patch_hash=d243a0666a46593b6b5a66d2d265c3bffecab32d16d8e9e9e316594fad7c2a90)(underscore@1.13.8)
       '@khanacademy/keypad-context': 3.2.65(@khanacademy/wonder-stuff-core@3.0.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(underscore@1.13.8)
       '@khanacademy/kmath': 2.4.23(@khanacademy/wonder-stuff-core@3.0.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(underscore@1.13.8)
       '@khanacademy/math-input': 26.4.37(dbbd5ea4166894c3ba86057bd68c361f)
