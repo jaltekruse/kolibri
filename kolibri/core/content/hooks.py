@@ -42,6 +42,17 @@ class ContentViewerHook(WebpackBundleHook, WebpackInclusionMixin):
     #: Whether to allow object tag handling (defaults to False for sandboxing compatibility)
     allow_object_tag = False
 
+    #: Whether the content origin serves this plugin's static directory, for
+    #: pages the viewer frames from there
+    sandbox_static = False
+
+    @property
+    def sandbox_static_path(self):
+        """
+        Returns the filesystem path to the plugin's static directory.
+        """
+        return str(files(self._module_path).joinpath("static"))
+
     @classmethod
     def all_css_selectors(cls):
         """Get all CSS selectors (auto-generated from presets + custom), cached."""
@@ -127,12 +138,7 @@ class SandboxedContentViewerHook(ContentViewerHook):
     #: Bundle ID of the sandbox handler, declared in buildConfig.js with sandbox_handler: true
     sandbox_handler_id = "sandbox_handler"
 
-    @property
-    def sandbox_static_path(self):
-        """
-        Returns the filesystem path to the plugin's static directory.
-        """
-        return str(files(self._module_path).joinpath("static"))
+    sandbox_static = True
 
     @classmethod
     def get_sandbox_static_paths(cls):
@@ -142,7 +148,8 @@ class SandboxedContentViewerHook(ContentViewerHook):
 
         Includes:
         - Core content static directory (kolibri/core/content/static)
-        - Plugin static directories for each registered sandbox handler
+        - Plugin static directories for each registered sandbox handler, and
+          each content viewer that sets sandbox_static
 
         All of these are mounted at one URL root, and the first location holding a
         path wins, so a plugin must namespace its own subdirectory (core is mounted
@@ -150,7 +157,9 @@ class SandboxedContentViewerHook(ContentViewerHook):
         """
         core_static_path = str(files("kolibri.core.content").joinpath("static"))
         return [core_static_path] + [
-            hook.sandbox_static_path for hook in cls.registered_hooks
+            hook.sandbox_static_path
+            for hook in ContentViewerHook.registered_hooks
+            if hook.sandbox_static
         ]
 
     @property
