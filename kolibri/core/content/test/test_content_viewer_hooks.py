@@ -5,6 +5,7 @@ from django.conf import settings
 from django.test import TestCase
 from le_utils.constants import format_presets
 
+from kolibri.core.content.hooks import ContentViewerHook
 from kolibri.core.content.hooks import SandboxedContentViewerHook
 from kolibri.core.content.utils.paths import zip_content_static_root
 from kolibri.core.webpack.hooks import WebpackError
@@ -20,6 +21,21 @@ class SandboxHook(SandboxedContentViewerHook):
     bundle_id = "main"
     presets = (format_presets.HTML5_ZIP,)
     css_selectors = ("iframe[data-sandbox]",)
+
+
+class ViewerHook(ContentViewerHook):
+    _not_abstract = True
+
+    bundle_id = "viewer"
+    presets = (format_presets.VIDEO_HIGH_RES,)
+
+
+class ViewerWithStaticHook(ContentViewerHook):
+    _not_abstract = True
+
+    bundle_id = "viewer_with_static"
+    presets = (format_presets.AUDIO,)
+    sandbox_static = True
 
 
 def _stats(*chunks, status="done"):
@@ -43,17 +59,27 @@ class SandboxedContentViewerHookTestCase(TestCase):
             os.path.join(os.path.dirname(__file__), "static"),
         )
 
-    def test_get_sandbox_static_paths_puts_core_first(self):
-        with patch.object(
-            SandboxedContentViewerHook,
+    def _patch_viewers(self, *hooks):
+        return patch.object(
+            ContentViewerHook,
             "_registered_hooks",
-            {self.hook.unique_id: self.hook},
-        ):
+            {hook.unique_id: hook for hook in hooks},
+        )
+
+    def test_get_sandbox_static_paths_puts_core_first(self):
+        with self._patch_viewers(self.hook):
             paths = SandboxedContentViewerHook.get_sandbox_static_paths()
 
         self.assertEqual(len(paths), 2)
         self.assertTrue(paths[0].endswith(os.path.join("content", "static")))
         self.assertEqual(paths[1], self.hook.sandbox_static_path)
+
+    def test_get_sandbox_static_paths_includes_viewers_that_ask_for_it(self):
+        with_static = ViewerWithStaticHook()
+        with self._patch_viewers(ViewerHook(), with_static):
+            paths = SandboxedContentViewerHook.get_sandbox_static_paths()
+
+        self.assertEqual(paths[1:], [with_static.sandbox_static_path])
 
     def test_missing_stats_file_raises(self):
         with self._patch_stats(WebpackError("missing")), self.assertRaises(
