@@ -629,6 +629,9 @@ importers:
       kolibri-design-system:
         specifier: 'catalog:'
         version: 5.9.0
+      kolibri-plugin-data:
+        specifier: workspace:*
+        version: link:../../../packages/kolibri-plugin-data
       kolibri-viewer:
         specifier: workspace:*
         version: link:../../../packages/kolibri-viewer

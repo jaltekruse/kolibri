@@ -119,4 +119,9 @@ export default createTranslator('MediaPlayerStrings', {
     message: 'The media is encrypted and we do not have the keys to decrypt it',
     context: 'Error message displayed when encrypted media cannot be decrypted.',
   },
+  youtubeVideo: {
+    message: 'Video from YouTube',
+    context:
+      'Title, read by screen readers, of the frame that plays a video from YouTube instead of from Kolibri.',
+  },
 });
