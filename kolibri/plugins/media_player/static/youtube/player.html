@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Kolibri's media player frames this page from the content origin, which
+    serves its static files without a Content-Security-Policy header, so this
+    policy is the one that applies: it lets YouTube's player in, and nothing else. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.youtube.com https://s.ytimg.com; frame-src https://www.youtube-nocookie.com https://www.youtube.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://i.ytimg.com">
+    <link rel="stylesheet" href="player.css">
+    <script src="player.js" defer></script>
+  </head>
+  <body>
+    <div id="player"></div>
+  </body>
+</html>
