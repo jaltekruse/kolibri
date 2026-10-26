@@ -233,3 +233,20 @@ class ShareFileHook(KolibriHook):
     def execute_file_share(cls, filename, message):
         for hook in cls.registered_hooks:
             hook.share_file(filename, message)
+
+
+@define_hook
+class ChannelImportHook(KolibriHook):
+    """
+    A hook for plugins to act on a channel's content nodes once an import has
+    replaced them: a new channel, or a new version of one.
+    """
+
+    @abstractmethod
+    def channel_imported(self, channel_id):
+        pass
+
+    @classmethod
+    def execute_channel_imported(cls, channel_id):
+        for hook in cls.registered_hooks:
+            hook.channel_imported(channel_id)
