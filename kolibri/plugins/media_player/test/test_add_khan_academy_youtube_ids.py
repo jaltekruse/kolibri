@@ -5,13 +5,17 @@ import uuid
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+import urllib3
 from django.core.management import call_command
 from django.test import TestCase
 from le_utils.constants import content_kinds
 
+from kolibri.core.content.hooks import ChannelImportHook
 from kolibri.core.content.models import ChannelMetadata
 from kolibri.core.content.models import ContentNode
 from kolibri.core.content.models import Language
+from kolibri.core.tasks.main import job_storage
+from kolibri.utils import conf
 
 KHAN_ACADEMY = uuid.uuid5(uuid.NAMESPACE_DNS, "khanacademy.org")
 
@@ -33,14 +37,26 @@ def khan_academy_content_id(youtube_id):
     return uuid.uuid5(KHAN_ACADEMY, youtube_id).hex
 
 
+class ResponseBody(io.BytesIO):
+    """Like http.client's response, it closes once the whole body has been read."""
+
+    def isclosed(self):
+        return self.tell() == len(self.getbuffer())
+
+
 def fake_download(text, status_code=200):
     response = MagicMock(status_code=status_code)
-    response.raw = io.BytesIO(text.encode("utf-8"))
+    # What requests streams from
+    response.raw = urllib3.HTTPResponse(
+        body=ResponseBody(text.encode("utf-8")),
+        status=status_code,
+        preload_content=False,
+    )
     response.__enter__.return_value = response
     return response
 
 
-class AddKhanAcademyYouTubeIdsTestCase(TestCase):
+class KhanAcademyChannelsMixin:
     def setUp(self):
         Language.objects.create(id="en", lang_code="en")
         Language.objects.create(id="es", lang_code="es")
@@ -67,9 +83,16 @@ class AddKhanAcademyYouTubeIdsTestCase(TestCase):
             channel_id=channel.channel_id,
             parent=channel,
             kind=content_kinds.VIDEO,
+            license_owner="Khan Academy",
             options=options or {},
         )
 
+    def youtube_id(self, node):
+        node.refresh_from_db()
+        return node.options.get("youtube_id")
+
+
+class AddKhanAcademyYouTubeIdsTestCase(KhanAcademyChannelsMixin, TestCase):
     def run_with_export(self, text, *channel_ids):
         with tempfile.NamedTemporaryFile(
             "w", suffix=".tsv", delete=False, encoding="utf-8"
@@ -77,10 +100,6 @@ class AddKhanAcademyYouTubeIdsTestCase(TestCase):
             export.write(text)
         self.addCleanup(os.remove, export.name)
         call_command("add_khan_academy_youtube_ids", *channel_ids, export=export.name)
-
-    def youtube_id(self, node):
-        node.refresh_from_db()
-        return node.options.get("youtube_id")
 
     def test_records_the_youtube_id_of_each_video_in_the_export(self):
         channel = self.create_channel("en")
@@ -134,9 +153,7 @@ class AddKhanAcademyYouTubeIdsTestCase(TestCase):
         self.assertEqual(self.youtube_id(chosen), "5a6zpfl50go")
         self.assertIsNone(self.youtube_id(not_chosen))
 
-    @patch(
-        "kolibri.plugins.media_player.management.commands.add_khan_academy_youtube_ids.requests.get"
-    )
+    @patch("kolibri.plugins.media_player.khan_academy.requests.get")
     def test_downloads_the_export_in_each_channels_language(self, get):
         english = self.create_video(self.create_channel("en"), "5a6zpfl50go")
         portuguese = self.create_video(self.create_channel("pt-BR"), "5a6zpfl50go")
@@ -153,13 +170,66 @@ class AddKhanAcademyYouTubeIdsTestCase(TestCase):
         self.assertEqual(self.youtube_id(english), "5a6zpfl50go")
         self.assertEqual(self.youtube_id(portuguese), "dubbedPt123")
 
-    @patch(
-        "kolibri.plugins.media_player.management.commands.add_khan_academy_youtube_ids.requests.get"
-    )
+    @patch("kolibri.plugins.media_player.khan_academy.requests.get")
     def test_skips_a_language_khan_academy_has_no_export_in(self, get):
         get.return_value = fake_download("Not found", status_code=404)
         video = self.create_video(self.create_channel("es"), "5a6zpfl50go")
 
         call_command("add_khan_academy_youtube_ids")
 
+        self.assertIsNone(self.youtube_id(video))
+
+
+@patch("kolibri.plugins.media_player.khan_academy.requests.get")
+class YouTubeIdsOnChannelImportTestCase(KhanAcademyChannelsMixin, TestCase):
+    """Importing a Khan Academy channel looks up its videos' YouTube ids."""
+
+    databases = "__all__"
+
+    def setUp(self):
+        super().setUp()
+        job_storage.clear(force=True)
+        self.addCleanup(job_storage.clear, force=True)
+
+    def import_channel(self, channel):
+        with patch.dict(conf.OPTIONS["MediaPlayer"], {"YOUTUBE_PLAYBACK": True}):
+            ChannelImportHook.execute_channel_imported(channel.channel_id)
+
+    def run_queued_jobs(self):
+        for job in job_storage.get_all_jobs():
+            job_storage.get_job(job.job_id).execute()
+
+    def test_records_the_youtube_ids_of_a_khan_academy_channels_videos(self, get):
+        get.return_value = fake_download(EN_EXPORT)
+        video = self.create_video(self.create_channel("en"), "5a6zpfl50go")
+
+        self.import_channel(video.parent)
+        self.run_queued_jobs()
+
+        self.assertEqual(self.youtube_id(video), "5a6zpfl50go")
+
+    def test_leaves_other_channels_alone(self, get):
+        channel = self.create_channel("en")
+        ContentNode.objects.create(
+            id=uuid.uuid4().hex,
+            title="A video",
+            content_id=uuid.uuid4().hex,
+            channel_id=channel.channel_id,
+            parent=channel,
+            kind=content_kinds.VIDEO,
+            license_owner="Someone else",
+        )
+
+        self.import_channel(channel)
+        self.run_queued_jobs()
+
+        get.assert_not_called()
+
+    def test_does_nothing_when_youtube_playback_is_off(self, get):
+        video = self.create_video(self.create_channel("en"), "5a6zpfl50go")
+
+        ChannelImportHook.execute_channel_imported(video.channel_id)
+        self.run_queued_jobs()
+
+        get.assert_not_called()
         self.assertIsNone(self.youtube_id(video))
