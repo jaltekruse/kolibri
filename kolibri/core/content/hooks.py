@@ -6,7 +6,9 @@ Hooks for managing the display and viewing of content.
 """
 
 import json
+import operator
 from abc import abstractmethod
+from functools import reduce
 
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
@@ -250,3 +252,49 @@ class ChannelImportHook(KolibriHook):
     def execute_channel_imported(cls, channel_id):
         for hook in cls.registered_hooks:
             hook.channel_imported(channel_id)
+
+
+@define_hook
+class StreamedContentHook(KolibriHook):
+    """
+    A hook for plugins that play some resources without their files on the device,
+    as videos from YouTube. A resource an admin imported that a plugin can play is
+    available without its files, and an import can be asked to leave them out.
+    """
+
+    @property
+    def enabled(self):
+        """Whether the plugin plays resources without their files."""
+        return True
+
+    @abstractmethod
+    def playable_without_files(self):
+        """A Q of the ContentNodes the plugin can play without their files."""
+
+    @abstractmethod
+    def files_to_stream(self):
+        """
+        A Q of the Files an import asked to stream leaves out. What the plugin needs
+        to play their resources, such as a video's YouTube id, can arrive after the
+        import: until then, those resources are not available.
+        """
+
+    @classmethod
+    def _enabled_hooks(cls):
+        return [hook for hook in cls.registered_hooks if hook.enabled]
+
+    @classmethod
+    def is_enabled(cls):
+        return bool(cls._enabled_hooks())
+
+    @classmethod
+    def playable_without_files_filter(cls):
+        """A Q of the ContentNodes some plugin plays without their files, or None."""
+        filters = [hook.playable_without_files() for hook in cls._enabled_hooks()]
+        return reduce(operator.or_, filters) if filters else None
+
+    @classmethod
+    def files_to_stream_filter(cls):
+        """A Q of the Files an import asked to stream leaves out, or None."""
+        filters = [hook.files_to_stream() for hook in cls._enabled_hooks()]
+        return reduce(operator.or_, filters) if filters else None

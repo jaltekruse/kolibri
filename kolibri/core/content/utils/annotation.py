@@ -27,6 +27,7 @@ from le_utils.constants import modalities
 
 from kolibri.core.content.apps import KolibriContentConfig
 from kolibri.core.content.errors import InvalidStorageFilenameError
+from kolibri.core.content.hooks import StreamedContentHook
 from kolibri.core.content.models import ChannelMetadata
 from kolibri.core.content.models import ContentNode
 from kolibri.core.content.models import File
@@ -278,6 +279,37 @@ def set_leaf_nodes_invisible(
         min_boundary += dynamic_chunksize
 
 
+def _streamed_filter(already_imported=False):
+    """
+    A Q of the imported resources a plugin plays without their files, as videos
+    from YouTube: they are available without them. With already_imported, the
+    nodes are being marked as imported, which their column doesn't show yet.
+    """
+    playable = StreamedContentHook.playable_without_files_filter()
+    if playable is None:
+        return None
+    return playable if already_imported else playable & Q(admin_imported=True)
+
+
+def set_streamed_content_availability(channel_id):
+    """
+    Marks the imported resources that a plugin can now play without their files
+    available, as videos once their YouTube ids are known.
+    """
+    streamed = _streamed_filter()
+    if streamed is None:
+        return
+    ContentNode.objects.filter(streamed, channel_id=channel_id, available=False).update(
+        available=True
+    )
+    recurse_annotation_up_tree(channel_id)
+    set_channel_metadata_fields(channel_id)
+    ContentCacheKey.update_cache_key()
+    # Do this call after refreshing the content cache key
+    # as the caching is dependent on the key.
+    get_all_contentnode_label_metadata()
+
+
 def set_leaf_node_availability_from_local_file_availability(
     channel_id, node_ids=None, exclude_node_ids=None, admin_imported=None
 ):
@@ -307,19 +339,26 @@ def set_leaf_node_availability_from_local_file_availability(
         dynamic_chunksize,
     )
 
-    values_dict = {
-        "available": Exists(
-            File.objects.filter(
-                # Correlate between the contentnode id and the foreign key to the
-                # content node on the file table, completing the many to many lookup
-                contentnode=OuterRef("id"),
-                # Only look at files that are required (not supplementary)
-                supplementary=False,
-                # And only LocalFile objects we know have associated files on disk
-                local_file__available=True,
-            )
-        ),
-    }
+    available = Exists(
+        File.objects.filter(
+            # Correlate between the contentnode id and the foreign key to the
+            # content node on the file table, completing the many to many lookup
+            contentnode=OuterRef("id"),
+            # Only look at files that are required (not supplementary)
+            supplementary=False,
+            # And only LocalFile objects we know have associated files on disk
+            local_file__available=True,
+        )
+    )
+    streamed = _streamed_filter(already_imported=admin_imported)
+    if streamed is not None:
+        available = Case(
+            When(streamed, then=Value(True)),
+            default=available,
+            output_field=BooleanField(),
+        )
+
+    values_dict = {"available": available}
 
     if admin_imported is not None:
         # admin_imported OR coalesce(column, False), as one expression: Django 3.2
@@ -558,10 +597,13 @@ def propagate_forced_localfile_removal(localfiles_dict_list):
                 [f["id"] for f in file_slice]
             ),
         )
-        removed_nodes += ContentNode.objects.filter(files__in=files).values_list(
-            "id", flat=True
-        )
-        ContentNode.objects.filter(files__in=files).update(available=False)
+        nodes = ContentNode.objects.filter(files__in=files)
+        streamed = _streamed_filter()
+        if streamed is not None:
+            # Still available without their files
+            nodes = nodes.exclude(streamed)
+        removed_nodes += nodes.values_list("id", flat=True)
+        nodes.update(available=False)
         i += batch_size
     return removed_nodes
 

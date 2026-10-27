@@ -1,4 +1,5 @@
 from kolibri.core.auth.constants.user_kinds import SUPERUSER
+from kolibri.core.content.hooks import StreamedContentHook
 from kolibri.core.device.hooks import CheckIsMeteredHook
 from kolibri.core.hooks import NavigationHook
 from kolibri.core.hooks import RoleBasedRedirectHook
@@ -30,6 +31,8 @@ class DeviceManagementAsset(WebpackBundleHook):
             "isRemoteContent": OPTIONS["Deployment"]["REMOTE_CONTENT"],
             "canRestart": bool(OPTIONS["Deployment"]["RESTART_HOOKS"]),
             "canCheckMeteredConnection": CheckIsMeteredHook.is_registered,
+            # Whether an import can leave out videos' files, to play them from YouTube
+            "canStreamVideos": StreamedContentHook.is_enabled(),
             "deprecationWarnings": {
                 "ie11": any_ie11_users(),
             },

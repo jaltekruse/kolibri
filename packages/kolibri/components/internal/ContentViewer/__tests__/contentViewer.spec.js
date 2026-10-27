@@ -185,3 +185,49 @@ describe('ContentViewer public API registration', () => {
     expect(screen.getByTestId('answer')).toHaveTextContent('null');
   });
 });
+
+describe('ContentViewer viewer choice', () => {
+  const VideoViewer = {
+    name: 'VideoViewer',
+    setup(props, context) {
+      useContentViewer(context);
+      return () => h('div', { attrs: { 'data-testid': 'viewer' } }, 'video viewer');
+    },
+  };
+
+  function renderNode(available) {
+    kolibri.presetViewerComponent.mockImplementation(preset =>
+      preset === 'high_res_video' ? VideoViewer : null,
+    );
+    const contentNode = {
+      id: 'a'.repeat(32),
+      kind: 'video',
+      available,
+      options: { youtube_id: '5a6zpfl50go' },
+      files: [
+        {
+          id: 'b'.repeat(32),
+          checksum: 'c'.repeat(32),
+          extension: 'mp4',
+          preset: 'high_res_video',
+          file_size: 10,
+          storage_url: null,
+          available: false,
+          supplementary: false,
+          thumbnail: false,
+        },
+      ],
+    };
+    return render(ContentViewer, { props: { contentNode } });
+  }
+
+  it("shows an available resource with its viewer, though its files aren't on the device", () => {
+    renderNode(true);
+    expect(screen.getByTestId('viewer')).toHaveTextContent('video viewer');
+  });
+
+  it("has no viewer for an unavailable resource whose files aren't on the device", () => {
+    renderNode(false);
+    expect(screen.queryByTestId('viewer')).not.toBeInTheDocument();
+  });
+});

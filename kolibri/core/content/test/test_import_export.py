@@ -124,6 +124,7 @@ class GetImportExportDataTestCase(TestCase):
             available=None,
             topic_thumbnails=True,
             all_thumbnails=False,
+            stream=False,
         )
 
 
@@ -2220,6 +2221,7 @@ class ImportContentTestCase(TestCase):
             False,
             renderable_only=True,
             all_thumbnails=False,
+            stream=False,
             drive_id=None,
         )
 
@@ -2256,6 +2258,7 @@ class ImportContentTestCase(TestCase):
             False,
             renderable_only=True,
             all_thumbnails=False,
+            stream=False,
             drive_id=None,
         )
 
@@ -2375,6 +2378,7 @@ class ImportContentTestCase(TestCase):
             False,
             renderable_only=True,
             all_thumbnails=False,
+            stream=False,
             drive_id=None,
         )
 
@@ -2422,6 +2426,7 @@ class ImportContentTestCase(TestCase):
             False,
             renderable_only=True,
             all_thumbnails=False,
+            stream=False,
             drive_id=None,
         )
 
@@ -2441,6 +2446,7 @@ class ImportContentTestCase(TestCase):
             False,
             renderable_only=True,
             all_thumbnails=False,
+            stream=False,
             drive_id="",
         )
 
@@ -2501,6 +2507,7 @@ class ImportContentTestCase(TestCase):
             False,
             renderable_only=True,
             all_thumbnails=False,
+            stream=False,
             drive_id=None,
         )
 
@@ -2549,6 +2556,7 @@ class ImportContentTestCase(TestCase):
             False,
             renderable_only=True,
             all_thumbnails=False,
+            stream=False,
             drive_id="",
         )
 
@@ -2595,6 +2603,7 @@ class ImportContentTestCase(TestCase):
             False,
             renderable_only=True,
             all_thumbnails=False,
+            stream=False,
             peer_id=None,
         )
 

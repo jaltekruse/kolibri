@@ -8,6 +8,7 @@ from le_utils.constants import modalities
 
 from kolibri.core.content.constants.transfer_types import COPY_METHOD
 from kolibri.core.content.constants.transfer_types import DOWNLOAD_METHOD
+from kolibri.core.content.hooks import StreamedContentHook
 from kolibri.core.content.models import ContentNode
 from kolibri.core.content.models import File
 from kolibri.core.content.models import LocalFile
@@ -518,6 +519,22 @@ def _get_files_for_available_courses(channel_id):
     return []
 
 
+def _local_files_to_update(channel_id):
+    """
+    The LocalFiles an update can transfer. Resources an import left to stream,
+    available without their files, keep streaming: their files are left out.
+    """
+    streamed_files = StreamedContentHook.files_to_stream_filter()
+    if streamed_files is None:
+        return LocalFile.objects.all()
+    streaming = ContentNode.objects.filter(
+        channel_id=channel_id, available=True
+    ).exclude(files__supplementary=False, files__local_file__available=True)
+    return LocalFile.objects.exclude(
+        files__in=File.objects.filter(streamed_files, contentnode__in=streaming)
+    )
+
+
 def get_import_data_for_update(
     channel_id, drive_id=None, peer_id=None, renderable_only=True
 ):
@@ -549,6 +566,7 @@ def get_import_data_for_update(
     queried_file_objects = []
 
     content_ids = set()
+    local_files = _local_files_to_update(channel_id)
 
     while updated_ids_slice:
         if file_based_node_id_dict is not None:
@@ -567,7 +585,7 @@ def get_import_data_for_update(
                 batch_nodes.values_list("content_id", flat=True).distinct()
             )
 
-            files_to_transfer = LocalFile.objects.filter(
+            files_to_transfer = local_files.filter(
                 available=False, files__contentnode__in=batch_nodes
             ).values(*LOCALFILE_TRANSFER_FIELDS)
 
@@ -579,7 +597,7 @@ def get_import_data_for_update(
     # Get all nodes that are marked as available but have missing files.
     # This will ensure that we update thumbnails, and other files.
     queried_file_objects.extend(
-        LocalFile.objects.filter(
+        local_files.filter(
             available=False,
             files__contentnode__in=ContentNode.objects.filter(
                 available=True, channel_id=channel_id

@@ -2,7 +2,7 @@ import TaskResource from 'kolibri/apiResources/TaskResource';
 import { TaskTypes } from 'kolibri-common/utils/syncTaskUtils';
 
 export function startImportTask(params) {
-  const { importSource, channelId, channelName, included, excluded } = params;
+  const { importSource, channelId, channelName, included, excluded, stream } = params;
 
   const taskParams = {
     channel_id: channelId,
@@ -10,6 +10,11 @@ export function startImportTask(params) {
     node_ids: included,
     exclude_node_ids: excluded,
   };
+
+  // Leave out the files of videos, to play them from YouTube
+  if (stream) {
+    taskParams.stream = true;
+  }
 
   if (importSource.type === 'peer' || importSource.type === 'studio') {
     if (importSource.id) {

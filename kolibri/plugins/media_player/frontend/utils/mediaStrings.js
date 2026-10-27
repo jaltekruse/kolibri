@@ -124,4 +124,9 @@ export default createTranslator('MediaPlayerStrings', {
     context:
       'Title, read by screen readers, of the frame that plays a video from YouTube instead of from Kolibri.',
   },
+  notOnDevice: {
+    message: "This video isn't on this device, and can't play from YouTube right now",
+    context:
+      "Shown in place of a video that was imported to play from YouTube, without its files, when YouTube can't be reached or can't play it.",
+  },
 });

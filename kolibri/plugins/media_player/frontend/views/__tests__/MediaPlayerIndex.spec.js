@@ -233,6 +233,26 @@ describe('MediaPlayerIndex playing from YouTube', () => {
     expect(localVideo(next.container)).not.toBeNull();
   });
 
+  it("says so when a video imported to play from YouTube can't", async () => {
+    mockContent({ files: [{ ...VIDEO_FILES[0], available: false }], defaultFile: undefined });
+    const { container } = renderPlayer();
+
+    await sendFromFrame('unreachable');
+
+    expect(screen.getByRole('alert')).toHaveTextContent(mediaStrings.notOnDevice$());
+    expect(localVideo(container)).toBeNull();
+  });
+
+  it("says so when a video that isn't on the device has no YouTube id", () => {
+    mockContent({ options: {}, defaultFile: undefined });
+
+    const { container } = renderPlayer();
+
+    expect(screen.getByRole('alert')).toHaveTextContent(mediaStrings.notOnDevice$());
+    expect(youtubeFrame()).toBeNull();
+    expect(localVideo(container)).toBeNull();
+  });
+
   it('plays from Kolibri when YouTube takes too long to get ready', async () => {
     const { container } = renderPlayer();
 

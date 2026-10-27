@@ -19,6 +19,7 @@ from le_utils.constants import content_kinds
 
 from kolibri.core.content.models import ChannelMetadata
 from kolibri.core.content.models import ContentNode
+from kolibri.core.content.utils.annotation import set_streamed_content_availability
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +90,26 @@ def is_khan_academy_channel(channel_id):
     ).exists()
 
 
+def _record_youtube_ids(videos, youtube_ids):
+    """
+    Records each video's YouTube id, by content_id, in its options. Returns how many
+    videos have one, and the videos whose id is new.
+    """
+    found = 0
+    updated = []
+    for video in videos.only("id", "channel_id", "content_id", "options"):
+        youtube_id = youtube_ids.get(video.content_id)
+        if not youtube_id:
+            continue
+        found += 1
+        video_options = video.options or {}
+        if video_options.get("youtube_id") != youtube_id:
+            video.options = {**video_options, "youtube_id": youtube_id}
+            updated.append(video)
+    ContentNode.objects.bulk_update(updated, ["options"], batch_size=500)
+    return found, updated
+
+
 def add_youtube_ids(channel_ids=None, export=None):
     """
     Record the YouTube ids of the videos in these channels, or in all channels,
@@ -117,18 +138,11 @@ def add_youtube_ids(channel_ids=None, export=None):
                 continue
             youtube_ids = read_youtube_ids(rows, content_ids)
 
-        found = 0
-        updated = []
-        for video in videos.only("id", "content_id", "options"):
-            youtube_id = youtube_ids.get(video.content_id)
-            if not youtube_id:
-                continue
-            found += 1
-            video_options = video.options or {}
-            if video_options.get("youtube_id") != youtube_id:
-                video.options = {**video_options, "youtube_id": youtube_id}
-                updated.append(video)
-        ContentNode.objects.bulk_update(updated, ["options"], batch_size=500)
+        found, updated = _record_youtube_ids(videos, youtube_ids)
+        # Imported videos that play from YouTube without their files are now
+        # available
+        for channel_id in {video.channel_id for video in updated}:
+            set_streamed_content_availability(channel_id)
         logger.info(
             "Found YouTube ids for %d of the %d videos in %s, %d of them new",
             found,
