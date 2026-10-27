@@ -293,18 +293,20 @@ export async function tree(id, query, { node, children, include }) {
     return null;
   }
 
-  const includedChildren = async parentId => (await children(parentId)).filter(include);
-  const firstChildren = async (parentId, after) =>
-    (await includedChildren(parentId))
+  // Only topics have children
+  const includedChildren = async parentNode =>
+    parentNode.kind === TOPIC ? (await children(parentNode.id)).filter(include) : [];
+  const firstChildren = async (parentNode, after) =>
+    (await includedChildren(parentNode))
       .filter(child => after === null || child.lft > after)
       .slice(0, NUM_CHILDREN);
 
   // TreeQueryMixin.get_tree_queryset: a chain of only children is followed down
-  let childNodes = await firstChildren(id, nextGt);
+  let childNodes = await firstChildren(parent, nextGt);
   const ancestors = [];
   while (nextGt === null && childNodes.length === 1) {
     ancestors.push(childNodes[0]);
-    childNodes = await firstChildren(childNodes[0].id, null);
+    childNodes = await firstChildren(childNodes[0], null);
   }
 
   // TreeQueryMixin.get_grandchild_ids
@@ -312,7 +314,7 @@ export async function tree(id, query, { node, children, include }) {
     let found = [];
     const singletons = [];
     for (const child of nodes) {
-      const grandchildNodes = await includedChildren(child.id);
+      const grandchildNodes = await includedChildren(child);
       if (grandchildNodes.length === 1) {
         singletons.push(grandchildNodes[0]);
       }

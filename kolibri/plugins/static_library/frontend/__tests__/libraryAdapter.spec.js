@@ -187,6 +187,8 @@ describe('libraryAdapter', () => {
       params: lessonsTopic.children.more.params,
     });
     expect(titles(more.children.results)).toEqual(['Lesson 12']);
+    // Resources have no children to look for
+    expect(fetchedPaths()).not.toContain(`children/${id('eqv')}.json`);
   });
 
   it('follows a chain of only children down the tree', async () => {
