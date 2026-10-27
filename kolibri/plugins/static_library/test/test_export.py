@@ -25,6 +25,7 @@ from kolibri.plugins.static_library.export import export_library_data
 from kolibri.plugins.static_library.export import export_page
 from kolibri.plugins.static_library.export import export_static_files
 from kolibri.plugins.static_library.export import INDEX_FIELDS
+from kolibri.plugins.static_library.export import streamed_files
 from kolibri.utils.tests.helpers import override_option
 
 CHANNEL_ID = "6199dde695db4ee4ab392222d5af1e5c"
@@ -154,7 +155,7 @@ class ExportChosenChannelsTestCase(StaticLibraryTestCase):
         self.assertFalse(os.path.exists(self.path("library", "nodes")))
 
 
-class ExportContentTestCase(StaticLibraryTestCase):
+class ContentFilesMixin:
     def setUp(self):
         super().setUp()
         self.content_dir = tempfile.mkdtemp()
@@ -168,7 +169,7 @@ class ExportContentTestCase(StaticLibraryTestCase):
         self.archive = self.add_file(node, "a" * 32, "zip")
         self.video = self.add_file(node, "b" * 32, "mp4")
 
-    def add_file(self, node, checksum, extension):
+    def add_file(self, node, checksum, extension, **file_fields):
         name = f"{checksum}.{extension}"
         folder = os.path.join(self.content_dir, "storage", name[0], name[1])
         os.makedirs(folder, exist_ok=True)
@@ -181,9 +182,13 @@ class ExportContentTestCase(StaticLibraryTestCase):
         local_file = LocalFile.objects.create(
             id=checksum, extension=extension, available=True
         )
-        File.objects.create(id=checksum, local_file=local_file, contentnode=node)
+        File.objects.create(
+            id=checksum, local_file=local_file, contentnode=node, **file_fields
+        )
         return local_file
 
+
+class ExportContentTestCase(ContentFilesMixin, StaticLibraryTestCase):
     def test_writes_content_files_where_their_urls_point(self):
         export_content(self.output, available_channels())
 
@@ -205,6 +210,68 @@ class ExportContentTestCase(StaticLibraryTestCase):
         export_content(self.output, available_channels(["f" * 32]))
 
         self.assertFalse(os.path.exists(self.path("content", "storage", "b")))
+
+
+class ExportStreamedVideosTestCase(ContentFilesMixin, StaticLibraryTestCase):
+    def setUp(self):
+        super().setUp()
+        self.youtube_playback(True)
+        root = ChannelMetadata.objects.get(id=CHANNEL_ID).root
+        self.streamed = ContentNode.objects.create(
+            id="e" * 32,
+            title="Video from YouTube",
+            content_id="f" * 32,
+            channel_id=CHANNEL_ID,
+            parent=root,
+            kind="video",
+            available=True,
+            options={"youtube_id": "5a6zpfl50go"},
+        )
+        self.add_file(self.streamed, "c" * 32, "mp4", preset="high_res_video")
+        self.add_file(
+            self.streamed, "d" * 32, "vtt", preset="video_subtitle", supplementary=True
+        )
+
+    def youtube_playback(self, on):
+        option = override_option("MediaPlayer", "YOUTUBE_PLAYBACK", on)
+        option.enable()
+        self.addCleanup(option.disable)
+
+    def export(self):
+        channels = available_channels()
+        left_out = streamed_files(channels)
+        export_library_data(self.output, channels, left_out)
+        export_content(self.output, channels, left_out)
+
+    def storage(self, checksum, extension):
+        return self.path(
+            "content", "storage", checksum[0], checksum[1], f"{checksum}.{extension}"
+        )
+
+    def test_leaves_out_the_files_of_videos_that_play_from_youtube(self):
+        self.export()
+
+        self.assertFalse(os.path.exists(self.storage("c" * 32, "mp4")))
+        self.assertTrue(os.path.exists(self.storage("d" * 32, "vtt")))
+        files = {f["id"]: f for f in self.data("nodes", f"{'e' * 32}.json")["files"]}
+        self.assertEqual(
+            (files["c" * 32]["available"], files["c" * 32]["storage_url"]),
+            (False, None),
+        )
+        self.assertTrue(files["d" * 32]["available"])
+
+    def test_keeps_videos_files_without_youtube_playback(self):
+        self.youtube_playback(False)
+
+        self.export()
+
+        self.assertTrue(os.path.exists(self.storage("c" * 32, "mp4")))
+
+    def test_command_needs_something_that_plays_without_files(self):
+        self.youtube_playback(False)
+
+        with self.assertRaises(CommandError):
+            call_command("exportstaticlibrary", self.output, "--stream")
 
 
 class ExportPageTestCase(StaticLibraryTestCase):

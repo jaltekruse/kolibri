@@ -36,8 +36,10 @@ from django.template.loader import render_to_string
 from rest_framework.request import Request
 from rest_framework.utils.encoders import JSONEncoder
 
+from kolibri.core.content.hooks import StreamedContentHook
 from kolibri.core.content.models import ChannelMetadata
 from kolibri.core.content.models import ContentNode
+from kolibri.core.content.models import File
 from kolibri.core.content.models import LocalFile
 from kolibri.core.content.utils.cache import get_course_ids
 from kolibri.core.content.utils.paths import get_content_file_name
@@ -169,10 +171,18 @@ def _index_row(node, course_ids):
     return [fields[field] for field in INDEX_FIELDS]
 
 
-def _export_channel_nodes(data_dir, channel_id, course_ids):
+def _leave_out_files(node, file_ids):
+    for f in node["files"]:
+        if f["id"] in file_ids:
+            # As Kolibri returns a file that isn't on the device
+            f.update(available=False, storage_url=None)
+
+
+def _export_channel_nodes(data_dir, channel_id, course_ids, left_out_file_ids):
     children = defaultdict(list)
     index = []
     for node in _serialized_nodes(channel_id):
+        _leave_out_files(node, left_out_file_ids)
         _write_json(os.path.join(data_dir, "nodes", f"{node['id']}.json"), node)
         if node["parent"]:
             children[node["parent"]].append(node)
@@ -213,24 +223,52 @@ def _export_library_summary(data_dir, channels):
     )
 
 
-def export_library_data(output, channels):
-    """Writes the JSON the page answers its API requests from."""
+def streamed_files(channels):
+    """
+    The files of the channels' resources that plugins play without them, as videos'
+    files when they play from YouTube.
+    """
+    playable = StreamedContentHook.playable_without_files_filter()
+    if playable is None:
+        return File.objects.none()
+    return File.objects.filter(
+        StreamedContentHook.files_to_stream_filter(),
+        contentnode__in=ContentNode.objects.filter(
+            playable,
+            channel_id__in=[channel.id for channel in channels],
+            available=True,
+        ),
+    )
+
+
+def export_library_data(output, channels, left_out_files=None):
+    """
+    Writes the JSON the page answers its API requests from. Left out files are
+    written as Kolibri returns files that aren't on the device.
+    """
     data_dir = _path_for_url(output, library_data_url())
     course_ids = set(get_course_ids())
+    left_out_file_ids = (
+        set(left_out_files.values_list("id", flat=True))
+        if left_out_files is not None
+        else set()
+    )
     _export_channels(data_dir, channels)
     for channel in channels:
-        _export_channel_nodes(data_dir, channel.id, course_ids)
+        _export_channel_nodes(data_dir, channel.id, course_ids, left_out_file_ids)
     _export_library_summary(data_dir, channels)
 
 
-def export_content(output, channels):
-    """Writes the channels' content files, and their archives unzipped."""
+def export_content(output, channels, left_out_files=None):
+    """Writes the channels' content files, but those left out, and their archives unzipped."""
     channel_ids = [channel.id for channel in channels]
     local_files = LocalFile.objects.filter(
         available=True,
         files__contentnode__channel_id__in=channel_ids,
         files__contentnode__available=True,
     ).distinct()
+    if left_out_files is not None:
+        local_files = local_files.exclude(files__in=left_out_files)
     for local_file in local_files:
         target = _path_for_url(output, get_local_content_storage_file_url(local_file))
         source = get_content_storage_file_path(get_content_file_name(local_file))
@@ -280,9 +318,14 @@ def available_channels(channel_ids=None):
     return channels
 
 
-def export_library(output, channel_ids=None):
+def export_library(output, channel_ids=None, stream=False):
+    """
+    With stream, the files of resources that plugins play without them are left
+    out, as videos' files when they play from YouTube.
+    """
     channels = available_channels(channel_ids)
-    export_library_data(output, channels)
-    export_content(output, channels)
+    left_out_files = streamed_files(channels) if stream else None
+    export_library_data(output, channels, left_out_files)
+    export_content(output, channels, left_out_files)
     export_static_files(output)
     export_page(output)

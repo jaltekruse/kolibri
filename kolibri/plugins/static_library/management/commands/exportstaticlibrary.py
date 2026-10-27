@@ -2,6 +2,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
 
+from kolibri.core.content.hooks import StreamedContentHook
 from kolibri.plugins.static_library.export import available_channels
 from kolibri.plugins.static_library.export import export_library
 from kolibri.plugins.static_library.paths import library_page_url
@@ -25,8 +26,16 @@ class Command(BaseCommand):
             metavar="CHANNEL_ID",
             help="Only export this channel; repeat for more. Defaults to every available channel.",
         )
+        parser.add_argument(
+            "--stream",
+            action="store_true",
+            help=(
+                "Leave out the files of resources that play without them, as videos "
+                "that play from YouTube when YOUTUBE_PLAYBACK is on"
+            ),
+        )
 
-    def handle(self, output, channel_ids, **options):
+    def handle(self, output, channel_ids, stream, **options):
         if getattr(settings, "DEVELOPER_MODE", False):
             raise CommandError(
                 "The page would load its code from the development server; "
@@ -37,5 +46,10 @@ class Command(BaseCommand):
         )
         if missing:
             raise CommandError(f"No available channel {', '.join(sorted(missing))}")
-        export_library(output, channel_ids)
+        if stream and not StreamedContentHook.is_enabled():
+            raise CommandError(
+                "Nothing plays without its files: turn on YOUTUBE_PLAYBACK, "
+                "for videos to play from YouTube"
+            )
+        export_library(output, channel_ids, stream=stream)
         self.stdout.write(f"Serve {output} and open {library_page_url()}")
