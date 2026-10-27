@@ -1,3 +1,4 @@
+import heartbeat from 'kolibri/heartbeat';
 import router from 'kolibri/router';
 import urls from 'kolibri/urls';
 import { setRequestAdapter } from 'kolibri/utils/baseClient';
@@ -30,7 +31,12 @@ class StaticLibraryModule extends KolibriApp {
     return { ...RootVue, store };
   }
   startRootVue() {
-    return prepareLearnApp().then(() => super.startRootVue());
+    // Kolibri's core checks the session as soon as it loads, before this module
+    // answers requests, so the static host answered that check: ask again here
+    return heartbeat
+      .pollSessionEndPoint()
+      .then(prepareLearnApp)
+      .then(() => super.startRootVue());
   }
   ready() {
     // As in Learn: after every navigation, block double-clicks
