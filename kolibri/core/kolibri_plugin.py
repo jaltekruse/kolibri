@@ -60,17 +60,20 @@ class FrontEndCoreAppAssetHook(WebpackBundleHook):
             f' data-polyfill-url="{polyfill_url}"></script>'
         )
 
-    def render_to_page_load_sync_html(self):
+    def render_to_page_load_sync_html(self, navigation=True):
         """
         Don't render the frontend message files in the usual way
         as the global object to register them does not exist yet.
         Instead they are loaded through plugin data.
+
+        Pass navigation=False to leave out other plugins' navigation bundles, for a
+        page with no Kolibri server behind it to open their pages.
         """
         tags = [
             *self.plugin_data_tag(),
             self._polyfill_loader_tag(),
             *self.js_and_css_tags(),
-            *self.navigation_tags(),
+            *(self.navigation_tags() if navigation else []),
         ]
 
         return mark_safe("\n".join(tags))
