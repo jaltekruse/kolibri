@@ -1091,6 +1091,34 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4
 
+  kolibri/plugins/static_library:
+    dependencies:
+      kolibri:
+        specifier: workspace:*
+        version: link:../../../packages/kolibri
+      kolibri-app:
+        specifier: workspace:*
+        version: link:../../../packages/kolibri-app
+      kolibri-common:
+        specifier: workspace:*
+        version: link:../../../packages/kolibri-common
+      kolibri-logging:
+        specifier: workspace:*
+        version: link:../../../packages/kolibri-logging
+      kolibri-plugin-data:
+        specifier: workspace:*
+        version: link:../../../packages/kolibri-plugin-data
+      lodash:
+        specifier: 'catalog:'
+        version: 4.17.23
+      vue:
+        specifier: 'catalog:'
+        version: 2.7.16
+    devDependencies:
+      '@testing-library/vue':
+        specifier: 'catalog:'
+        version: 5.9.0(vue-template-compiler@2.7.16)(vue@2.7.16)
+
   kolibri/plugins/user_auth:
     dependencies:
       '@vueuse/core':

@@ -1,0 +1,12 @@
+{% extends "kolibri/base.html" %}
+{% load content_tags core_tags webpack_tags static_library_tags %}
+
+{% block frontend_assets %}
+{% content_viewer_assets %}
+{% core_assets_without_navigation %}
+{% frontend_base_assets %}
+{% endblock %}
+
+{% block content %}
+  {% webpack_asset 'kolibri.plugins.static_library.app' %}
+{% endblock %}

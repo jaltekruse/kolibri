@@ -15,6 +15,7 @@ DEFAULT_PLUGINS = [
     "kolibri.plugins.qti_viewer",
     "kolibri.plugins.setup_wizard",
     "kolibri.plugins.slideshow_viewer",
+    "kolibri.plugins.static_library",
     "kolibri.plugins.user_auth",
     "kolibri.plugins.user_profile",
     "kolibri.plugins.bloompub_viewer",

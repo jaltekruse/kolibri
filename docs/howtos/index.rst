@@ -21,3 +21,4 @@ These guides are step by step guides for common tasks in getting started and wor
   dev_data_setup
   multi_agent_setup
   python_monorepo
+  static_library
