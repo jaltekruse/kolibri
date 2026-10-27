@@ -79,3 +79,31 @@ class TestPolyfillLoaderTagRendering(TestCase):
         self.assertGreater(loader_pos, -1, "loader URL missing from output")
         self.assertGreater(core_pos, -1, "core bundle URL missing from output")
         self.assertLess(loader_pos, core_pos)
+
+
+class TestNavigationTagRendering(TestCase):
+    """render_to_page_load_sync_html includes other plugins' navigation bundles unless asked not to."""
+
+    NAVIGATION_TAG = '<script src="/static/learn_side_nav-abc.js"></script>'
+
+    def _render(self, **kwargs):
+        hook = FrontEndCoreAppAssetHook()
+        with patch.object(
+            hook, "_polyfill_loader_tag", return_value=LOADER_TAG
+        ), patch.object(hook, "plugin_data_tag", return_value=[]), patch.object(
+            hook, "navigation_tags", return_value=[self.NAVIGATION_TAG]
+        ), patch.object(
+            type(hook),
+            "bundle",
+            new_callable=PropertyMock,
+            return_value=[CORE_CHUNK],
+        ):
+            return hook.render_to_page_load_sync_html(**kwargs)
+
+    def test_includes_navigation_bundles(self):
+        self.assertIn(self.NAVIGATION_TAG, self._render())
+
+    def test_leaves_out_navigation_bundles(self):
+        html = self._render(navigation=False)
+        self.assertNotIn(self.NAVIGATION_TAG, html)
+        self.assertIn("default_frontend-xyz.js", html)
