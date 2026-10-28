@@ -10,6 +10,7 @@ from le_utils.constants import content_kinds
 from kolibri.core.analytics.tasks import schedule_ping
 from kolibri.core.content.errors import InsufficientStorageSpaceError
 from kolibri.core.content.errors import InvalidStorageFilenameError
+from kolibri.core.content.hooks import ResourceImportHook
 from kolibri.core.content.models import ContentNode
 from kolibri.core.content.utils import annotation
 from kolibri.core.content.utils import paths
@@ -577,6 +578,8 @@ class ResourceImportManagerBase(JobProgressMixin, metaclass=ABCMeta):
             public=self.public,
             admin_imported=self.admin_imported,
         )
+        # Also when some files failed, or it was cancelled: those that arrived are in use
+        ResourceImportHook.execute_resources_imported(self.channel_id)
 
         self.resources_after_transfer = (
             ContentNode.objects.filter(channel_id=self.channel_id, available=True)

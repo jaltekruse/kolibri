@@ -255,6 +255,23 @@ class ChannelImportHook(KolibriHook):
 
 
 @define_hook
+class ResourceImportHook(KolibriHook):
+    """
+    A hook for plugins to act on a channel's resources once an import has brought
+    their files onto the device.
+    """
+
+    @abstractmethod
+    def resources_imported(self, channel_id):
+        pass
+
+    @classmethod
+    def execute_resources_imported(cls, channel_id):
+        for hook in cls.registered_hooks:
+            hook.resources_imported(channel_id)
+
+
+@define_hook
 class StreamedContentHook(KolibriHook):
     """
     A hook for plugins that play some resources without their files on the device,
