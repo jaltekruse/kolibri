@@ -233,6 +233,17 @@ describe('MediaPlayerIndex playing from YouTube', () => {
     expect(localVideo(next.container)).not.toBeNull();
   });
 
+  it("tries YouTube for a video that isn't on the device, though YouTube couldn't be reached before", async () => {
+    const earlier = renderPlayer();
+    await sendFromFrame('unreachable');
+    earlier.unmount();
+    mockContent({ files: [{ ...VIDEO_FILES[0], available: false }], defaultFile: undefined });
+
+    renderPlayer();
+
+    expect(new URL(youtubeFrame().src).searchParams.get('v')).toBe(YOUTUBE_ID);
+  });
+
   it("says so when a video imported to play from YouTube can't", async () => {
     mockContent({ files: [{ ...VIDEO_FILES[0], available: false }], defaultFile: undefined });
     const { container } = renderPlayer();

@@ -62,7 +62,7 @@
         if (!isVideo.value || youtubeUnavailable.value) {
           return null;
         }
-        return playableYouTubeId(options.value);
+        return playableYouTubeId(options.value, Boolean(defaultFile.value));
       });
 
       return {
