@@ -24,7 +24,8 @@ const langSpec = {
 
 const fileSpec = {
   id: { type: String, required: true },
-  storage_url: { type: String, required: true },
+  // None for a file that isn't on the device
+  storage_url: { type: String, default: null },
   extension: { type: String, required: true },
   available: { type: Boolean, required: true },
   file_size: { type: Number, required: true },
