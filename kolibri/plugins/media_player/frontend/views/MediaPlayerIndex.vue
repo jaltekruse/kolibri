@@ -8,6 +8,13 @@
       v-on="$listeners"
       @unavailable="youtubeUnavailable = true"
     />
+    <p
+      v-else-if="isVideo && !defaultFile"
+      class="not-on-device"
+      role="alert"
+    >
+      {{ notOnDevice$() }}
+    </p>
     <VideoPlayer
       v-else-if="isVideo"
       v-on="$listeners"
@@ -27,6 +34,7 @@
   import useContentViewer from 'kolibri/composables/useContentViewer';
   import customExtractors, { VIDEO_PRESETS } from '../utils/fileExtractors';
   import { playableYouTubeId } from '../utils/youtube';
+  import mediaStrings from '../utils/mediaStrings';
   import VideoPlayer from './VideoPlayer';
   import AudioPlayer from './AudioPlayer';
   import YouTubePlayer from './YouTubePlayer';
@@ -35,7 +43,7 @@
     name: 'MediaPlayerIndex',
     components: { VideoPlayer, AudioPlayer, YouTubePlayer },
     setup(props, context) {
-      const { files, options } = useContentViewer(context, { customExtractors });
+      const { files, defaultFile, options } = useContentViewer(context, { customExtractors });
 
       const isVideo = computed(() => {
         return files.value.some(file => VIDEO_PRESETS.has(file.preset));
@@ -57,8 +65,26 @@
         return playableYouTubeId(options.value);
       });
 
-      return { isVideo, youtubeId, youtubeUnavailable };
+      return {
+        isVideo,
+        defaultFile,
+        youtubeId,
+        youtubeUnavailable,
+        notOnDevice$: mediaStrings.notOnDevice$,
+      };
     },
   };
 
 </script>
+
+
+<style lang="scss" scoped>
+
+  .not-on-device {
+    padding: 16px;
+    margin: 0;
+    color: var(--tokens-text);
+    background-color: var(--tokens-surface);
+  }
+
+</style>
