@@ -11,8 +11,9 @@ export const YOUTUBE_PLAYER_MESSAGE = 'kolibri-youtube-player';
 
 const YOUTUBE_ID = /^[\w-]{11}$/;
 
-// Once YouTube cannot be reached, videos play from Kolibri without waiting for
-// YouTube again, for the rest of the browser session
+// Once YouTube cannot be reached, videos on the device play from Kolibri without
+// waiting for YouTube again, for the rest of the browser session. Videos that aren't
+// on the device have nothing else to play, so they still try YouTube.
 const UNREACHABLE_KEY = 'kolibriYouTubeUnreachable';
 
 export function setYouTubeUnreachable() {
@@ -22,13 +23,14 @@ export function setYouTubeUnreachable() {
 /**
  * The YouTube id to play a video from, or null to play it from Kolibri.
  * @param {object} options - The content node's options, where a YouTube id is kept
+ * @param {boolean} onDevice - Whether the video's file is on the device to play instead
  * @returns {string|null} An id that YouTube can be asked to play
  */
-export function playableYouTubeId(options) {
+export function playableYouTubeId(options, onDevice) {
   const youtubeId = options && options.youtube_id;
   if (
     !plugin_data.youtubePlayerUrl ||
-    window.sessionStorage.getItem(UNREACHABLE_KEY) ||
+    (onDevice && window.sessionStorage.getItem(UNREACHABLE_KEY)) ||
     !YOUTUBE_ID.test(youtubeId)
   ) {
     return null;
