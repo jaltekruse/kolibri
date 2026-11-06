@@ -63,3 +63,32 @@ describe('DownloadButton', () => {
     expect(screen.getByText(SAVE_BUTTON_TEXT)).toBeInTheDocument();
   });
 });
+
+describe('DownloadButton files', () => {
+  // A video's file that isn't on the device, as when the video plays from YouTube
+  const fileNotOnDevice = {
+    preset: 'high_res_video',
+    available: false,
+    file_size: 100,
+    storage_url: null,
+    extension: 'mp4',
+    checksum: '1234567890',
+  };
+
+  it("does not render for a file that isn't on the device", () => {
+    kolibri.presetViewerComponent = jest.fn(() => ({ template: '<div></div>' }));
+    renderComponent({ files: [fileNotOnDevice] });
+
+    expect(screen.queryByText(SAVE_BUTTON_TEXT)).not.toBeInTheDocument();
+  });
+
+  it("takes files that aren't on the device, and so have no URL", () => {
+    expect(DownloadButton.props.files.validator([fileNotOnDevice])).toBe(true);
+  });
+
+  it('refuses a file without its checksum', () => {
+    expect(
+      DownloadButton.props.files.validator([{ ...fileNotOnDevice, checksum: undefined }]),
+    ).toBe(false);
+  });
+});

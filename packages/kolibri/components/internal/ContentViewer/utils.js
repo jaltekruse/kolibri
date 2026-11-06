@@ -3,12 +3,12 @@
 // → DownloadButton → ContentViewer/utils
 const getKolibri = () => require('kolibri').default;
 
-export const getRenderableFiles = files =>
+export const getRenderableFiles = (files, { includeUnavailable = false } = {}) =>
   files.filter(
     file =>
       !file.thumbnail &&
       !file.supplementary &&
-      file.available &&
+      (file.available || includeUnavailable) &&
       getKolibri().presetViewerComponent(file.preset),
   );
 
