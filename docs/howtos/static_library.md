@@ -6,7 +6,7 @@ The `static_library` plugin writes a Kolibri's channels as plain files that any 
 
 The page is Learn's own library, topic and resource pages, in the plugin's `app` bundle. A Kolibri page asks Kolibri's API for everything it shows; this one has no Kolibri to ask, so the plugin gives the HTTP client an adapter (`setRequestAdapter` in `kolibri/utils/baseClient`) that answers each request from JSON files written beside the page:
 
-- `channels.json` and `nodes/<id>.json` hold exactly what `channel/?available=true` and `contentnode/<id>/` return.
+- `channels.json` and `nodes/<id>.json` hold what `channel/?available=true` and `contentnode/<id>/` return, with their URLs relative to the library's folder.
 - `children/<id>.json` holds a topic's children, serialized the same way. The adapter builds `contentnode_tree/<id>/` answers from them, paging children as Kolibri does.
 - `index/<channel id>.json` holds the fields of each node that `contentnode/` filters on. The adapter filters, searches (every word, in titles and descriptions, as Kolibri does) and pages over them, and works out the labels of what it found.
 - `library.json` holds each channel's root, the labels of the whole library and its first page of nodes, so the library page loads without any channel's index.
@@ -30,14 +30,14 @@ kolibri manage exportstaticlibrary ./site
 kolibri manage exportstaticlibrary ./site --channel <channel id> --channel <channel id>
 ```
 
-Every file goes where its URL on this Kolibri points, under the output folder. Serve the folder as the site's root, and open the page at `URL_PATH_PREFIX`:
+Every file goes where its URL on this Kolibri points, under the output folder, and the page's URLs are relative, so the folder works wherever it is served from. Open the page at `URL_PATH_PREFIX` under it:
 
 ```sh
 cd site && python -m http.server 8080
 # then open http://localhost:8080/ (or http://localhost:8080/<URL_PATH_PREFIX>)
 ```
 
-To host it under a path, such as `https://example.github.io/library/`, export with that path as the prefix: `KOLIBRI_URL_PATH_PREFIX=/library/ KOLIBRI_ZIP_CONTENT_URL_PATH_PREFIX=/library/ kolibri manage exportstaticlibrary ./site`, and publish `site/library/`.
+To host it under a path, as a GitHub Pages project site at `https://example.github.io/library/`, publish the output folder as it is.
 
 ## Videos from YouTube
 

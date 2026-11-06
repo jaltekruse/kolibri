@@ -1,7 +1,8 @@
 """
 Writes the library as files a static web host can serve. Each file goes where its
-URL on this Kolibri points, under the output folder, so serve that folder as the
-site's root and open the page at URL_PATH_PREFIX:
+URL on this Kolibri points, under the output folder, and the page's URLs of them are
+relative to it, so the folder can be served from any path; open the page at
+URL_PATH_PREFIX under it:
 
     <URL_PATH_PREFIX>index.html       the page, the static_library app
     <URL_PATH_PREFIX>static/          Kolibri's static files
@@ -57,8 +58,10 @@ from kolibri.core.content.viewsets.contentnode.base import ContentNodeViewset
 from kolibri.core.content.viewsets.contentnode.filters import OptionalPagination
 from kolibri.utils import translation
 
+from .paths import exported_url_roots
 from .paths import library_data_url
 from .paths import library_page_url
+from .paths import relative_url
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +127,8 @@ def _write_channel_thumbnail(data_dir, channel):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "wb") as f:
         f.write(urlsafe_b64decode(encoded))
-    return f"{library_data_url()}channel-thumbnails/{filename}"
+    # Relative to the library's data, as its other URLs are
+    return f"channel-thumbnails/{filename}"
 
 
 def _export_channels(data_dir, channels):
@@ -178,11 +182,21 @@ def _leave_out_files(node, file_ids):
             f.update(available=False, storage_url=None)
 
 
+def _relative_to_library_data(node):
+    # So the library works wherever it is served from
+    if node["thumbnail"]:
+        node["thumbnail"] = relative_url(node["thumbnail"], library_data_url())
+    for f in node["files"]:
+        if f["storage_url"]:
+            f["storage_url"] = relative_url(f["storage_url"], library_data_url())
+
+
 def _export_channel_nodes(data_dir, channel_id, course_ids, left_out_file_ids):
     children = defaultdict(list)
     index = []
     for node in _serialized_nodes(channel_id):
         _leave_out_files(node, left_out_file_ids)
+        _relative_to_library_data(node)
         _write_json(os.path.join(data_dir, "nodes", f"{node['id']}.json"), node)
         if node["parent"]:
             children[node["parent"]].append(node)
@@ -303,6 +317,10 @@ def export_page(output):
     # Learn's pages, which this page reuses, are only translated in Learn's bundle
     with translation.override("en"):
         html = render_to_string("static_library/index.html")
+    # The page's URLs of the export's files, as script and stylesheet tags and the
+    # data Kolibri reads, made relative to it, so it works wherever it is served from
+    for root in exported_url_roots():
+        html = html.replace(f'"{root}', f'"{relative_url(root, library_page_url())}')
     path = os.path.join(_path_for_url(output, library_page_url()), "index.html")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
