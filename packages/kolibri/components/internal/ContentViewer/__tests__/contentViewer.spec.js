@@ -195,11 +195,9 @@ describe('ContentViewer viewer choice', () => {
     },
   };
 
-  function renderNode(available) {
-    kolibri.presetViewerComponent.mockImplementation(preset =>
-      preset === 'high_res_video' ? VideoViewer : null,
-    );
-    const contentNode = {
+  // A video whose file isn't on the device, as Kolibri's API returns it
+  function videoNode(available, file = {}) {
+    return {
       id: 'a'.repeat(32),
       kind: 'video',
       available,
@@ -215,15 +213,32 @@ describe('ContentViewer viewer choice', () => {
           available: false,
           supplementary: false,
           thumbnail: false,
+          ...file,
         },
       ],
     };
-    return render(ContentViewer, { props: { contentNode } });
+  }
+
+  function renderNode(available) {
+    kolibri.presetViewerComponent.mockImplementation(preset =>
+      preset === 'high_res_video' ? VideoViewer : null,
+    );
+    return render(ContentViewer, { props: { contentNode: videoNode(available) } });
   }
 
   it("shows an available resource with its viewer, though its files aren't on the device", () => {
     renderNode(true);
     expect(screen.getByTestId('viewer')).toHaveTextContent('video viewer');
+  });
+
+  it("takes a resource whose files aren't on the device, and so have no URL", () => {
+    expect(ContentViewer.props.contentNode.validator(videoNode(true))).toBe(true);
+  });
+
+  it('refuses a resource whose file is missing what its viewer needs', () => {
+    expect(
+      ContentViewer.props.contentNode.validator(videoNode(true, { extension: undefined })),
+    ).toBe(false);
   });
 
   it("has no viewer for an unavailable resource whose files aren't on the device", () => {
