@@ -60,6 +60,11 @@ overrides:
 
 packageExtensionsChecksum: sha256-Cxa5WN7JgF+tmonooJc5B+gyBpR5dULZ04NCJlmlFBY=
 
+patchedDependencies:
+  '@khanacademy/kas@2.2.3':
+    hash: d243a0666a46593b6b5a66d2d265c3bffecab32d16d8e9e9e316594fad7c2a90
+    path: patches/@khanacademy__kas@2.2.3.patch
+
 importers:
 
   .:
@@ -121,6 +126,9 @@ importers:
       rewire:
         specifier: ^6.0.0
         version: 6.0.0
+      vue:
+        specifier: 'catalog:'
+        version: 2.7.16
       vue-template-compiler:
         specifier: 2.7.16
         version: 2.7.16
@@ -621,6 +629,9 @@ importers:
       kolibri-design-system:
         specifier: 'catalog:'
         version: 5.9.0
+      kolibri-plugin-data:
+        specifier: workspace:*
+        version: link:../../../packages/kolibri-plugin-data
       kolibri-viewer:
         specifier: workspace:*
         version: link:../../../packages/kolibri-viewer
@@ -700,7 +711,7 @@ importers:
     dependencies:
       '@khanacademy/kas':
         specifier: ^2.2.3
-        version: 2.2.3(underscore@1.13.8)
+        version: 2.2.3(patch_hash=d243a0666a46593b6b5a66d2d265c3bffecab32d16d8e9e9e316594fad7c2a90)(underscore@1.13.8)
       '@khanacademy/keypad-context':
         specifier: 3.2.65
         version: 3.2.65(@khanacademy/wonder-stuff-core@3.0.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(underscore@1.13.8)
@@ -951,6 +962,31 @@ importers:
         specifier: 'catalog:'
         version: 5.9.0(vue-template-compiler@2.7.16)(vue@2.7.16)
 
+  kolibri/plugins/quick_assign:
+    dependencies:
+      kolibri:
+        specifier: workspace:*
+        version: link:../../../packages/kolibri
+      kolibri-app:
+        specifier: workspace:*
+        version: link:../../../packages/kolibri-app
+      kolibri-common:
+        specifier: workspace:*
+        version: link:../../../packages/kolibri-common
+      kolibri-design-system:
+        specifier: 'catalog:'
+        version: 5.9.0
+      vue:
+        specifier: 'catalog:'
+        version: 2.7.16
+    devDependencies:
+      '@testing-library/user-event':
+        specifier: 'catalog:'
+        version: 14.6.1(@testing-library/dom@9.3.4)
+      '@testing-library/vue':
+        specifier: 'catalog:'
+        version: 5.9.0(vue-template-compiler@2.7.16)(vue@2.7.16)
+
   kolibri/plugins/safe_html5_viewer:
     dependencies:
       kolibri:
@@ -1054,6 +1090,34 @@ importers:
       object-fit-images:
         specifier: ^3.2.4
         version: 3.2.4
+
+  kolibri/plugins/static_library:
+    dependencies:
+      kolibri:
+        specifier: workspace:*
+        version: link:../../../packages/kolibri
+      kolibri-app:
+        specifier: workspace:*
+        version: link:../../../packages/kolibri-app
+      kolibri-common:
+        specifier: workspace:*
+        version: link:../../../packages/kolibri-common
+      kolibri-logging:
+        specifier: workspace:*
+        version: link:../../../packages/kolibri-logging
+      kolibri-plugin-data:
+        specifier: workspace:*
+        version: link:../../../packages/kolibri-plugin-data
+      lodash:
+        specifier: 'catalog:'
+        version: 4.17.23
+      vue:
+        specifier: 'catalog:'
+        version: 2.7.16
+    devDependencies:
+      '@testing-library/vue':
+        specifier: 'catalog:'
+        version: 5.9.0(vue-template-compiler@2.7.16)(vue@2.7.16)
 
   kolibri/plugins/user_auth:
     dependencies:
@@ -11855,7 +11919,7 @@ snapshots:
 
   '@juggle/resize-observer@3.4.0': {}
 
-  '@khanacademy/kas@2.2.3(underscore@1.13.8)':
+  '@khanacademy/kas@2.2.3(patch_hash=d243a0666a46593b6b5a66d2d265c3bffecab32d16d8e9e9e316594fad7c2a90)(underscore@1.13.8)':
     dependencies:
       '@khanacademy/perseus-utils': 2.1.5
       underscore: 1.13.8
@@ -11909,7 +11973,7 @@ snapshots:
 
   '@khanacademy/perseus-core@28.2.0(@khanacademy/wonder-stuff-core@3.0.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(underscore@1.13.8)':
     dependencies:
-      '@khanacademy/kas': 2.2.3(underscore@1.13.8)
+      '@khanacademy/kas': 2.2.3(patch_hash=d243a0666a46593b6b5a66d2d265c3bffecab32d16d8e9e9e316594fad7c2a90)(underscore@1.13.8)
       '@khanacademy/perseus-utils': 2.1.5
       '@khanacademy/pure-markdown': 2.2.8(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@khanacademy/wonder-stuff-core': 3.0.0
@@ -11921,7 +11985,7 @@ snapshots:
 
   '@khanacademy/perseus-linter@5.1.4(@khanacademy/wonder-stuff-core@3.0.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(underscore@1.13.8)':
     dependencies:
-      '@khanacademy/kas': 2.2.3(underscore@1.13.8)
+      '@khanacademy/kas': 2.2.3(patch_hash=d243a0666a46593b6b5a66d2d265c3bffecab32d16d8e9e9e316594fad7c2a90)(underscore@1.13.8)
       '@khanacademy/kmath': 2.4.23(@khanacademy/wonder-stuff-core@3.0.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(underscore@1.13.8)
       '@khanacademy/perseus-core': 28.2.0(@khanacademy/wonder-stuff-core@3.0.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(underscore@1.13.8)
       '@khanacademy/perseus-utils': 2.1.5
@@ -11934,7 +11998,7 @@ snapshots:
 
   '@khanacademy/perseus-score@8.11.7(@khanacademy/wonder-stuff-core@3.0.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(underscore@1.13.8)':
     dependencies:
-      '@khanacademy/kas': 2.2.3(underscore@1.13.8)
+      '@khanacademy/kas': 2.2.3(patch_hash=d243a0666a46593b6b5a66d2d265c3bffecab32d16d8e9e9e316594fad7c2a90)(underscore@1.13.8)
       '@khanacademy/kmath': 2.4.23(@khanacademy/wonder-stuff-core@3.0.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(underscore@1.13.8)
       '@khanacademy/perseus-core': 28.2.0(@khanacademy/wonder-stuff-core@3.0.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(underscore@1.13.8)
       '@khanacademy/perseus-utils': 2.1.5
@@ -11948,7 +12012,7 @@ snapshots:
 
   '@khanacademy/perseus@78.2.0(b376967251bc45ad9c64c56a2c049092)':
     dependencies:
-      '@khanacademy/kas': 2.2.3(underscore@1.13.8)
+      '@khanacademy/kas': 2.2.3(patch_hash=d243a0666a46593b6b5a66d2d265c3bffecab32d16d8e9e9e316594fad7c2a90)(underscore@1.13.8)
       '@khanacademy/keypad-context': 3.2.65(@khanacademy/wonder-stuff-core@3.0.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(underscore@1.13.8)
       '@khanacademy/kmath': 2.4.23(@khanacademy/wonder-stuff-core@3.0.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(underscore@1.13.8)
       '@khanacademy/math-input': 26.4.37(dbbd5ea4166894c3ba86057bd68c361f)

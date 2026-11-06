@@ -1,6 +1,9 @@
 <template>
 
-  <CoachAppBarPage :loading="pageLoading">
+  <CoachAppBarPage
+    :loading="pageLoading"
+    fullWidth
+  >
     <KPageContainer>
       <ReportsResourceHeader
         :resource="resource"
@@ -85,6 +88,12 @@
 
         <ReportsLearnersTable :entries="allEntries" />
       </template>
+
+      <LessonResourceResponses
+        :lessonId="$route.params.lessonId"
+        :contentId="$route.params.resourceId"
+        :learners="allEntries"
+      />
     </KPageContainer>
   </CoachAppBarPage>
 
@@ -109,6 +118,7 @@
   import ReportsControls from '../../common/ReportsControls';
   import ReportsResourceHeader from '../../common/ReportsResourceHeader';
   import store from '../../../store';
+  import LessonResourceResponses from './LessonResourceResponses';
 
   export default {
     name: 'LessonResourceLearnersPage',
@@ -118,6 +128,7 @@
       ReportsResourcesStats,
       ReportsControls,
       ReportsResourceHeader,
+      LessonResourceResponses,
     },
     mixins: [commonCoach],
     setup() {

@@ -61,6 +61,14 @@
             :class="{ small: windowIsSmall }"
             :style="{ borderBottomColor: 'var(--tokens-fineLine)' }"
           />
+          <KCheckbox
+            v-if="canStreamVideos && !shouldHideContentTree"
+            class="stream-videos"
+            :checked="streamVideos"
+            :label="$tr('streamVideos')"
+            :description="$tr('streamVideosDescription')"
+            @change="streamVideos = $event"
+          />
         </template>
       </template>
       <SelectionBottomBar
@@ -150,6 +158,7 @@
         // in beforeRouteLeave
         metadataDownloadTaskId: '',
         disableBottomBar: false,
+        streamVideos: false,
       };
     },
     computed: {
@@ -241,6 +250,9 @@
       shouldHideContentTree() {
         return this.newVersionAvailable && this.availableVersions.installed > 0;
       },
+      canStreamVideos() {
+        return plugin_data.canStreamVideos;
+      },
       isFileSpaceEnough() {
         if (plugin_data.isRemoteContent) {
           return false;
@@ -313,6 +325,7 @@
           channelName: this.transferredChannel.name,
           included: nodesForTransfer.included.map(x => x.id),
           excluded: nodesForTransfer.omitted.map(x => x.id),
+          stream: this.canStreamVideos && this.streamVideos,
           fileSize: this.transferFileSize,
           totalResources: this.transferResources,
         })
@@ -375,6 +388,16 @@
       importingFromPeer: {
         message: `Importing from '{deviceName}' ({url})`,
         context: 'Indicates the name of the device that the user is importing channels from.',
+      },
+      streamVideos: {
+        message: 'Play videos from YouTube instead of downloading them',
+        context:
+          'Checkbox label when importing resources. When checked, the video files are not downloaded, and videos play from YouTube.',
+      },
+      streamVideosDescription: {
+        message:
+          "Thumbnails and subtitles are still downloaded. Videos without a YouTube id won't be available. The size shown includes the videos.",
+        context: "Explains the 'Play videos from YouTube instead of downloading them' checkbox.",
       },
     },
   };

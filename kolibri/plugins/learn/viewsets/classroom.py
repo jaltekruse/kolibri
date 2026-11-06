@@ -54,6 +54,8 @@ class LessonResourceSerializer(serializers.Serializer):
     contentnode_id = serializers.CharField()
     progress = serializers.FloatField()
     contentnode = serializers.DictField(allow_null=True)
+    # Questions written by a coach, for resources that have them
+    prompts = serializers.ListField(child=serializers.DictField(), required=False)
 
 
 class LessonLearnerSerializer(serializers.Serializer):

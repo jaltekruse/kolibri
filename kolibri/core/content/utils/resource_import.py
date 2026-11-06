@@ -10,6 +10,7 @@ from le_utils.constants import content_kinds
 from kolibri.core.analytics.tasks import schedule_ping
 from kolibri.core.content.errors import InsufficientStorageSpaceError
 from kolibri.core.content.errors import InvalidStorageFilenameError
+from kolibri.core.content.hooks import ResourceImportHook
 from kolibri.core.content.models import ContentNode
 from kolibri.core.content.utils import annotation
 from kolibri.core.content.utils import paths
@@ -113,6 +114,7 @@ class ResourceImportManagerBase(JobProgressMixin, metaclass=ABCMeta):
         content_dir=None,
         admin_imported=True,
         import_channel_database=False,
+        stream=False,
     ):
         self.channel_id = channel_id
 
@@ -126,6 +128,7 @@ class ResourceImportManagerBase(JobProgressMixin, metaclass=ABCMeta):
         self.exclude_node_ids = exclude_node_ids
         self.renderable_only = renderable_only
         self.all_thumbnails = all_thumbnails
+        self.stream = stream
         self.fail_on_error = fail_on_error
         self.content_dir = content_dir
         self.admin_imported = admin_imported
@@ -575,6 +578,8 @@ class ResourceImportManagerBase(JobProgressMixin, metaclass=ABCMeta):
             public=self.public,
             admin_imported=self.admin_imported,
         )
+        # Also when some files failed, or it was cancelled: those that arrived are in use
+        ResourceImportHook.execute_resources_imported(self.channel_id)
 
         self.resources_after_transfer = (
             ContentNode.objects.filter(channel_id=self.channel_id, available=True)
@@ -623,6 +628,7 @@ class RemoteResourceImportManagerBase(ResourceImportManagerBase):
         timeout=transfer.Transfer.DEFAULT_TIMEOUT,
         import_channel_database=False,
         token=None,
+        stream=False,
     ):
         self.timeout = timeout
         self.peer_id = peer_id
@@ -667,6 +673,7 @@ class RemoteResourceImportManagerBase(ResourceImportManagerBase):
             content_dir=content_dir,
             admin_imported=admin_imported,
             import_channel_database=import_channel_database,
+            stream=stream,
         )
         # A token indicates the caller explicitly requested a specific channel version.
         self.version_requested = token is not None
@@ -748,6 +755,7 @@ class DiskResourceImportManagerBase(ResourceImportManagerBase):
         content_dir=None,
         admin_imported=True,
         import_channel_database=False,
+        stream=False,
     ):
         self.drive_id = drive_id
         if drive_id and not path:
@@ -765,6 +773,7 @@ class DiskResourceImportManagerBase(ResourceImportManagerBase):
             content_dir=content_dir,
             admin_imported=admin_imported,
             import_channel_database=import_channel_database,
+            stream=stream,
         )
 
     @staticmethod
@@ -846,6 +855,7 @@ class RemoteChannelResourceImportManager(RemoteResourceImportManagerBase):
             renderable_only=self.renderable_only,
             all_thumbnails=self.all_thumbnails,
             peer_id=self.peer_id,
+            stream=self.stream,
         )
 
 
@@ -887,6 +897,7 @@ class DiskChannelResourceImportManager(DiskResourceImportManagerBase):
             renderable_only=self.renderable_only,
             all_thumbnails=self.all_thumbnails,
             drive_id=self.drive_id,
+            stream=self.stream,
         )
 
 

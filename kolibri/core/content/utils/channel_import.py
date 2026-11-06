@@ -32,6 +32,7 @@ from kolibri.core.content.constants.schema_versions import VERSION_5
 from kolibri.core.content.constants.schema_versions import VERSION_6
 from kolibri.core.content.constants.schema_versions import VERSION_7
 from kolibri.core.content.contentschema.columns import for_version
+from kolibri.core.content.hooks import ChannelImportHook
 from kolibri.core.content.legacy_models import License
 from kolibri.core.content.models import ChannelMetadata
 from kolibri.core.content.models import ContentNode
@@ -1021,6 +1022,7 @@ class ChannelImport:
             logger.info(
                 "Channel %s successfully imported into the database", self.channel_id
             )
+            ChannelImportHook.execute_channel_imported(self.channel_id)
         return import_ran
 
     def end(self):

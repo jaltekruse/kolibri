@@ -110,6 +110,8 @@ kolibri/core/content/contentschema/migrations/*
 # Check in h5p & bloom specific files in their respective plugins
 !kolibri/plugins/h5p_viewer/static/h5p/
 !kolibri/plugins/bloompub_viewer/static/bloom/
+# and the YouTube player page in the media player plugin
+!kolibri/plugins/media_player/static/youtube/
 # H5P PHP library unpacked by build-h5p; only its build output is checked in
 kolibri/plugins/h5p_viewer/h5p_build/vendor/
 

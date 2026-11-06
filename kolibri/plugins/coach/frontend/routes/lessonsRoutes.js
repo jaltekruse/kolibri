@@ -14,6 +14,7 @@ import LessonCreationPage from '../views/lessons/LessonCreationPage';
 import { generateResourceHandler } from '../modules/resourceDetail/handlers';
 import LessonResourceLearnersPage from '../views/lessons/reports/LessonResourceLearnersPage';
 import LessonLearnerPage from '../views/lessons/reports/LessonLearnerPage.vue';
+import LessonWebPageReportPage from '../views/lessons/reports/LessonWebPageReportPage';
 import LessonExerciseLearnersPage from '../views/lessons/reports/LessonExerciseLearnersPage.vue';
 import {
   exerciseRootRedirectHandler,
@@ -174,6 +175,12 @@ export default [
     name: PageNames.LESSON_LEARNER_REPORT,
     path: CLASS + LESSON + LEARNER,
     component: LessonLearnerPage,
+    handler: defaultHandler,
+  },
+  {
+    name: PageNames.LESSON_WEB_PAGE_REPORT,
+    path: CLASS + LESSON + '/webpages/:webPageId',
+    component: LessonWebPageReportPage,
     handler: defaultHandler,
   },
   {

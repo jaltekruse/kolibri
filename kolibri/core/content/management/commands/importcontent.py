@@ -100,6 +100,14 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
+            "--stream",
+            action="store_true",
+            default=False,
+            dest="stream",
+            help="Leave out the files that resources play without, as videos that play from YouTube",
+        )
+
+        parser.add_argument(
             "--import_updates",
             action="store_true",
             default=False,
@@ -186,6 +194,7 @@ class Command(BaseCommand):
         peer_id=None,
         renderable_only=True,
         all_thumbnails=False,
+        stream=False,
         import_updates=False,
         fail_on_error=False,
         timeout=transfer.Transfer.DEFAULT_TIMEOUT,
@@ -209,6 +218,7 @@ class Command(BaseCommand):
                 peer_id=peer_id,
                 renderable_only=renderable_only,
                 all_thumbnails=all_thumbnails,
+                stream=stream,
                 fail_on_error=fail_on_error,
                 timeout=timeout,
                 content_dir=content_dir,
@@ -221,6 +231,7 @@ class Command(BaseCommand):
             peer_id=peer_id,
             renderable_only=renderable_only,
             all_thumbnails=all_thumbnails,
+            stream=stream,
             fail_on_error=fail_on_error,
             timeout=timeout,
             content_dir=content_dir,
@@ -237,6 +248,7 @@ class Command(BaseCommand):
         exclude_node_ids=None,
         renderable_only=True,
         all_thumbnails=False,
+        stream=False,
         import_updates=False,
         fail_on_error=False,
         content_dir=None,
@@ -255,6 +267,7 @@ class Command(BaseCommand):
                     drive_id=drive_id,
                     renderable_only=renderable_only,
                     all_thumbnails=all_thumbnails,
+                    stream=stream,
                     fail_on_error=fail_on_error,
                     content_dir=content_dir,
                 )
@@ -265,6 +278,7 @@ class Command(BaseCommand):
                     drive_id=drive_id,
                     renderable_only=renderable_only,
                     all_thumbnails=all_thumbnails,
+                    stream=stream,
                     fail_on_error=fail_on_error,
                     content_dir=content_dir,
                 )
@@ -276,6 +290,7 @@ class Command(BaseCommand):
             exclude_node_ids=exclude_node_ids,
             renderable_only=renderable_only,
             all_thumbnails=all_thumbnails,
+            stream=stream,
             fail_on_error=fail_on_error,
             content_dir=content_dir,
         )
@@ -309,6 +324,7 @@ class Command(BaseCommand):
                 peer_id=options["peer_id"],
                 renderable_only=options["renderable_only"],
                 all_thumbnails=options["all_thumbnails"],
+                stream=options["stream"],
                 import_updates=options["import_updates"],
                 fail_on_error=options["fail_on_error"],
                 timeout=options["timeout"],
@@ -330,6 +346,7 @@ class Command(BaseCommand):
                 exclude_node_ids=options["exclude_node_ids"],
                 renderable_only=options["renderable_only"],
                 all_thumbnails=options["all_thumbnails"],
+                stream=options["stream"],
                 import_updates=options["import_updates"],
                 fail_on_error=options["fail_on_error"],
                 content_dir=options["content_dir"],

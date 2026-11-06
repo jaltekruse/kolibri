@@ -1,0 +1,18 @@
+{
+  "name": "kolibri-static-library-plugin",
+  "description": "Static library plugin for Kolibri: the library as files a static web host can serve",
+  "private": true,
+  "version": "0.0.1",
+  "dependencies": {
+    "kolibri": "workspace:*",
+    "kolibri-app": "workspace:*",
+    "kolibri-common": "workspace:*",
+    "kolibri-logging": "workspace:*",
+    "kolibri-plugin-data": "workspace:*",
+    "lodash": "catalog:",
+    "vue": "catalog:"
+  },
+  "devDependencies": {
+    "@testing-library/vue": "catalog:"
+  }
+}
