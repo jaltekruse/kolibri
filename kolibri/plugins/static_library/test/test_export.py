@@ -64,6 +64,15 @@ class StaticLibraryTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         return response.json()
 
+    def exported(self, node):
+        """A node as the API returns it, with URLs relative to the library's data."""
+        if node["thumbnail"]:
+            node["thumbnail"] = "../" + node["thumbnail"].lstrip("/")
+        for f in node["files"]:
+            if f["storage_url"]:
+                f["storage_url"] = "../" + f["storage_url"].lstrip("/")
+        return node
+
 
 class ExportLibraryDataTestCase(StaticLibraryTestCase):
     def setUp(self):
@@ -76,7 +85,7 @@ class ExportLibraryDataTestCase(StaticLibraryTestCase):
         for node_id in ids:
             self.assertEqual(
                 self.data("nodes", f"{node_id}.json"),
-                self.api("contentnode-detail", pk=node_id),
+                self.exported(self.api("contentnode-detail", pk=node_id)),
             )
 
     def test_writes_each_topics_children_as_the_api_lists_them(self):
@@ -88,13 +97,16 @@ class ExportLibraryDataTestCase(StaticLibraryTestCase):
         for parent in parents:
             self.assertEqual(
                 self.data("children", f"{parent}.json"),
-                self.api("contentnode-list", {"parent": parent}),
+                [
+                    self.exported(node)
+                    for node in self.api("contentnode-list", {"parent": parent})
+                ],
             )
 
     def test_writes_the_channels_as_the_api_lists_them(self):
         channels = self.api("channel-list", {"available": True})
         for channel in channels:
-            channel["thumbnail"] = f"/library/channel-thumbnails/{channel['id']}.png"
+            channel["thumbnail"] = f"channel-thumbnails/{channel['id']}.png"
         self.assertEqual(self.data("channels.json"), channels)
 
     def test_writes_channel_thumbnails_as_files(self):
@@ -300,10 +312,32 @@ class ExportPageTestCase(StaticLibraryTestCase):
         with open(self.path("index.html"), encoding="utf-8") as f:
             page = f.read()
         self.assertIn('data-plugin="kolibri.plugins.static_library.app"', page)
-        self.assertIn('"libraryDataUrl":"/library/"', page)
-        self.assertIn("/static/kolibri.core.default_frontend.js", page)
-        self.assertIn("/static/kolibri.plugins.static_library.app.js", page)
+        self.assertIn("kolibri.core.default_frontend.js", page)
+        self.assertIn("kolibri.plugins.static_library.app.js", page)
         self.assertNotIn("side_nav", page)
+
+    @patch.object(WebpackBundleHook, "bundle", property(built_bundle))
+    def test_writes_the_pages_urls_relative_to_it(self):
+        export_page(self.output)
+
+        with open(self.path("index.html"), encoding="utf-8") as f:
+            page = f.read()
+        self.assertIn('src="static/kolibri.core.default_frontend.js"', page)
+        self.assertIn('"libraryDataUrl":"library/"', page)
+        self.assertIn('"__zipContentUrl":"content/zipcontent/"', page)
+        for root in ("/static/", "/content/", "/library/"):
+            self.assertNotIn(f'"{root}', page)
+
+    @patch.object(WebpackBundleHook, "bundle", property(built_bundle))
+    @override_option("Deployment", "URL_PATH_PREFIX", "/kolibri/")
+    def test_writes_urls_outside_the_pages_folder_relative_to_it(self):
+        export_page(self.output)
+
+        with open(self.path("kolibri", "index.html"), encoding="utf-8") as f:
+            page = f.read()
+        self.assertIn('"libraryDataUrl":"library/"', page)
+        # Zip content isn't under URL_PATH_PREFIX
+        self.assertIn('"__zipContentUrl":"../content/zipcontent/"', page)
 
 
 class ExportCommandTestCase(StaticLibraryTestCase):

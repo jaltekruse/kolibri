@@ -105,6 +105,42 @@ describe('libraryAdapter', () => {
     expect(node).toEqual(files[`nodes/${hex}.json`]);
   });
 
+  it("answers with whole URLs for a node's files, which the export writes relative to the library's data", async () => {
+    const path = `nodes/${id('eqv')}.json`;
+    const node = {
+      ...files[path],
+      thumbnail: '../content/storage/a/b/ab.png',
+      files: [
+        { id: 'f', storage_url: '../content/storage/c/d/cd.mp4' },
+        { id: 'g', storage_url: null },
+      ],
+    };
+    global.fetch = jest.fn(staticHost(DATA_URL, { ...files, [path]: node }));
+
+    const answer = await get('kolibri:core:contentnode_detail', { id: id('eqv') });
+
+    const origin = window.location.origin;
+    expect(answer.thumbnail).toBe(`${origin}/content/storage/a/b/ab.png`);
+    expect(answer.files.map(file => file.storage_url)).toEqual([
+      `${origin}/content/storage/c/d/cd.mp4`,
+      null,
+    ]);
+  });
+
+  it("answers with whole URLs for channels' thumbnails", async () => {
+    const channels = files['channels.json'].map(channel => ({
+      ...channel,
+      thumbnail: `channel-thumbnails/${channel.id}.png`,
+    }));
+    global.fetch = jest.fn(staticHost(DATA_URL, { ...files, 'channels.json': channels }));
+
+    const [algebra] = await get('kolibri:core:channel_list');
+
+    expect(algebra.thumbnail).toBe(
+      `${window.location.origin}/library/channel-thumbnails/${ALGEBRA}.png`,
+    );
+  });
+
   it('answers 404 for a node the library does not have', async () => {
     await expect(get('kolibri:core:contentnode_detail', { id: id('nope') })).rejects.toMatchObject({
       response: { status: 404 },

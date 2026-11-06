@@ -11,6 +11,27 @@ const ID = /^[0-9a-f]{32}$/;
  */
 export default function createLibrary(dataUrl) {
   const files = new Map();
+  // The export writes the files' URLs relative to the library's data, so it works
+  // wherever it is served from; requests made elsewhere, as from the frames content
+  // plays in, need them whole
+  const base = new URL(dataUrl, document.baseURI);
+
+  function whole(url) {
+    return url ? new URL(url, base).href : url;
+  }
+
+  function withWholeUrls(node) {
+    if (!node) {
+      return node;
+    }
+    if ('thumbnail' in node) {
+      node.thumbnail = whole(node.thumbnail);
+    }
+    for (const file of node.files || []) {
+      file.storage_url = whole(file.storage_url);
+    }
+    return node;
+  }
 
   function load(path) {
     if (!files.has(path)) {
@@ -51,11 +72,16 @@ export default function createLibrary(dataUrl) {
 
   return {
     summary: () => load('library.json'),
-    channels: () => load('channels.json'),
-    node: id => loadById('nodes', id),
-    children: async id => (await loadById('children', id)) || [],
+    channels: async () =>
+      (await load('channels.json')).map(channel => ({
+        ...channel,
+        thumbnail: whole(channel.thumbnail),
+      })),
+    node: async id => withWholeUrls(await loadById('nodes', id)),
+    children: async id => ((await loadById('children', id)) || []).map(withWholeUrls),
     async nodes(ids) {
-      return (await Promise.all(ids.map(id => loadById('nodes', id)))).filter(Boolean);
+      const nodes = await Promise.all(ids.map(id => loadById('nodes', id)));
+      return nodes.filter(Boolean).map(withWholeUrls);
     },
     async indexRows(channelIds) {
       return (await Promise.all(channelIds.map(indexRows))).flat();

@@ -4,7 +4,10 @@ from kolibri.plugins.hooks import register_hook
 from kolibri.utils import translation
 from kolibri.utils.translation import gettext as _
 
+from .paths import exported_url_roots
 from .paths import library_data_url
+from .paths import library_page_url
+from .paths import relative_url
 
 
 class StaticLibrary(KolibriPluginBase):
@@ -35,5 +38,10 @@ class StaticLibraryAsset(webpack_hooks.WebpackBundleHook):
             "canCheckMeteredConnection": False,
             "canShareFile": False,
             "enableCustomChannelNav": False,
-            "libraryDataUrl": library_data_url(),
+            # Relative to the page, as its other URLs are, which the page resolves
+            # where Kolibri needs them whole
+            "libraryDataUrl": relative_url(library_data_url(), library_page_url()),
+            "relativeRoots": sorted(
+                relative_url(root, library_page_url()) for root in exported_url_roots()
+            ),
         }
