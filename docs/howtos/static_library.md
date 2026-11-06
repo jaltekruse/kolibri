@@ -39,6 +39,18 @@ cd site && python -m http.server 8080
 
 To host it under a path, such as `https://example.github.io/library/`, export with that path as the prefix: `KOLIBRI_URL_PATH_PREFIX=/library/ KOLIBRI_ZIP_CONTENT_URL_PATH_PREFIX=/library/ kolibri manage exportstaticlibrary ./site`, and publish `site/library/`.
 
+## Videos from YouTube
+
+With Kolibri's `YOUTUBE_PLAYBACK` option on, the media player plays a video with a YouTube id from YouTube, and the page does too: it frames the YouTube player page the export copies to `content/static/youtube/`. To leave such videos' files out of the export, add `--stream`:
+
+```sh
+KOLIBRI_YOUTUBE_PLAYBACK=true kolibri manage exportstaticlibrary ./site --stream
+```
+
+Their files are written into the JSON as Kolibri returns a file that isn't on the device, so where YouTube can't play a video, the page says the video isn't on the device. Thumbnails and subtitles are still exported.
+
+A video's YouTube id is `youtube_id` in its `options`, which a channel's chef can set (in ricecooker, `extra_fields={"options": {"youtube_id": ...}}`). Learning Equality's Khan Academy channels don't carry them, so with `YOUTUBE_PLAYBACK` on, importing one looks them up in Khan Academy's public content export; `kolibri manage add_khan_academy_youtube_ids` does the same for channels imported before.
+
 ## Limitations
 
 - The page is in English: it reuses Learn's pages, whose translations are loaded for Learn's own bundle.

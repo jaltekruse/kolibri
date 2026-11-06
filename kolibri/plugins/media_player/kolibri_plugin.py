@@ -1,3 +1,5 @@
+from django.db.models import Q
+from le_utils.constants import content_kinds
 from le_utils.constants import format_presets
 
 from kolibri.core.content import hooks as content_hooks
@@ -35,6 +37,33 @@ class MediaPlayerAsset(content_hooks.ContentViewerHook):
         return {
             "youtubePlayerUrl": join_url(zip_content_static_root(), YOUTUBE_PLAYER_PATH)
         }
+
+
+def _options_with(field, key, value_start):
+    # Options are stored as JSON text, written with or without spaces
+    return Q(**{f"{field}__contains": f'"{key}": {value_start}'}) | Q(
+        **{f"{field}__contains": f'"{key}":{value_start}'}
+    )
+
+
+@register_hook
+class YouTubeVideosHook(content_hooks.StreamedContentHook):
+    """
+    With YOUTUBE_PLAYBACK on, a video with a YouTube id plays from YouTube, so its
+    own files can be left out. Its thumbnail and subtitles are still wanted.
+    """
+
+    @property
+    def enabled(self):
+        return conf.OPTIONS["MediaPlayer"]["YOUTUBE_PLAYBACK"]
+
+    def streamed_files(self):
+        options = "contentnode__options"
+        return (
+            Q(contentnode__kind=content_kinds.VIDEO, supplementary=False)
+            & _options_with(options, "youtube_id", '"')
+            & ~_options_with(options, "youtube_id", '""')
+        )
 
 
 @register_hook

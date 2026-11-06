@@ -6,7 +6,9 @@ Hooks for managing the display and viewing of content.
 """
 
 import json
+import operator
 from abc import abstractmethod
+from functools import reduce
 
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
@@ -250,3 +252,34 @@ class ChannelImportHook(KolibriHook):
     def execute_channel_imported(cls, channel_id):
         for hook in cls.registered_hooks:
             hook.channel_imported(channel_id)
+
+
+@define_hook
+class StreamedContentHook(KolibriHook):
+    """
+    A hook for plugins that play some resources without their files, as videos from
+    YouTube, so a copy of the library can leave those files out.
+    """
+
+    @property
+    def enabled(self):
+        """Whether the plugin plays resources without their files."""
+        return True
+
+    @abstractmethod
+    def streamed_files(self):
+        """A Q of the Files the plugin plays their resources without."""
+
+    @classmethod
+    def _enabled_hooks(cls):
+        return [hook for hook in cls.registered_hooks if hook.enabled]
+
+    @classmethod
+    def is_enabled(cls):
+        return bool(cls._enabled_hooks())
+
+    @classmethod
+    def streamed_files_filter(cls):
+        """A Q of the Files some plugin plays their resources without, or None."""
+        filters = [hook.streamed_files() for hook in cls._enabled_hooks()]
+        return reduce(operator.or_, filters) if filters else None
