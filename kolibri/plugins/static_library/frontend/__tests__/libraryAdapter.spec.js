@@ -95,6 +95,16 @@ describe('libraryAdapter', () => {
     expect(node).toEqual(files[`nodes/${id('eqv')}.json`]);
   });
 
+  it('answers with a node asked for by its id as a UUID, as Kolibri does', async () => {
+    // As an HTML5 app asks window.kolibri.navigateTo for a node
+    const hex = id('eqv');
+    const uuid = hex.replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, '$1-$2-$3-$4-$5').toUpperCase();
+
+    const node = await get('kolibri:core:contentnode_detail', { id: uuid });
+
+    expect(node).toEqual(files[`nodes/${hex}.json`]);
+  });
+
   it('answers 404 for a node the library does not have', async () => {
     await expect(get('kolibri:core:contentnode_detail', { id: id('nope') })).rejects.toMatchObject({
       response: { status: 404 },

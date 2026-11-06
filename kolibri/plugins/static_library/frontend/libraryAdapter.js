@@ -91,6 +91,17 @@ function urlPattern(name, withId = false) {
   return new RegExp(`^${url.split(ID_PLACEHOLDER).map(escapeRegExp).join('([^/]+)')}$`);
 }
 
+/**
+ * The id the library's files are named by. Kolibri's API takes a UUID with or
+ * without dashes, in either case, as HTML5 apps pass to window.kolibri.navigateTo.
+ * @param {string} id - An id from a request's URL
+ * @returns {string}
+ */
+function normalizeId(id) {
+  const hex = id.replace(/-/g, '').toLowerCase();
+  return /^[0-9a-f]{32}$/.test(hex) ? hex : id;
+}
+
 function response(config, status, data) {
   const result = { data, status, statusText: String(status), headers: {}, config, request: {} };
   if (status >= 200 && status < 300) {
@@ -284,7 +295,8 @@ export default function createLibraryAdapter(dataUrl) {
       const match = url.pathname.match(route.pattern);
       if (match && route.method === method) {
         try {
-          return response(config, 200, await route.answer({ id: match[1], query, data }));
+          const id = match[1] && normalizeId(match[1]);
+          return response(config, 200, await route.answer({ id, query, data }));
         } catch (error) {
           if (error instanceof NotFound) {
             return response(config, 404, { detail: 'Not found.' });
