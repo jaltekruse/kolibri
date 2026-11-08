@@ -41,6 +41,7 @@ from kolibri.core.lessons.models import IndividualSyncableLesson
 from kolibri.core.lessons.models import Lesson
 from kolibri.core.lessons.models import LessonAssignment
 from kolibri.core.logger.models import AttemptLog
+from kolibri.core.logger.models import ContentFeedbackLog
 from kolibri.core.logger.models import ContentSessionLog
 from kolibri.core.logger.models import ContentSummaryLog
 from kolibri.core.logger.models import ExamAttemptLog
@@ -251,6 +252,7 @@ def _get_log_models(dataset_id):
         querysets=[
             ContentSessionLog.objects.filter(dataset_id_filter),
             ContentSummaryLog.objects.filter(dataset_id_filter),
+            ContentFeedbackLog.objects.filter(dataset_id_filter),
             AttemptLog.objects.filter(dataset_id_filter),
             ExamAttemptLog.objects.filter(dataset_id_filter),
             ExamLog.objects.filter(dataset_id_filter),
@@ -434,6 +436,7 @@ def _get_user_log_models(user):
         querysets=[
             ContentSessionLog.objects.filter(user_id_filter),
             ContentSummaryLog.objects.filter(user_id_filter),
+            ContentFeedbackLog.objects.filter(user_id_filter),
             AttemptLog.objects.filter(user_id_filter),
             ExamAttemptLog.objects.filter(user_id_filter),
             ExamLog.objects.filter(user_id_filter),

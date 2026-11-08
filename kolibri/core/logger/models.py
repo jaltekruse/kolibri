@@ -167,6 +167,36 @@ class ContentSummaryLog(BaseLogModel):
         super().save(*args, **kwargs)
 
 
+class ContentFeedbackLog(BaseLogModel):
+    """
+    A coach's feedback to a learner on their work on a content item, like the scores and comments a coach gives on work
+    a learner saved in an HTML5 app. What it holds is up to the content. Coaches and admins write it, and the learner
+    can only read it, so the learner's own logs of their work are never written by anyone else.
+    """
+
+    # Morango syncing settings
+    morango_model_name = "contentfeedbacklog"
+
+    permissions = IsOwn(read_only=True) | RoleBasedPermissions(
+        target_field="user",
+        can_be_created_by=(role_kinds.ADMIN, role_kinds.COACH),
+        can_be_read_by=(role_kinds.ADMIN, role_kinds.COACH),
+        can_be_updated_by=(role_kinds.ADMIN, role_kinds.COACH),
+        can_be_deleted_by=(role_kinds.ADMIN, role_kinds.COACH),
+        collection_field="user__memberships__collection_id",
+    )
+
+    user = models.ForeignKey(FacilityUser, on_delete=models.CASCADE)
+    content_id = UUIDField(db_index=True)
+    channel_id = UUIDField(blank=True, null=True)
+    data = JSONField(default={}, blank=True)
+    updated = DateTimeTzField(default=local_now)
+
+    def calculate_source_id(self):
+        # one for each content item for each learner, as there is one ContentSummaryLog
+        return self.content_id
+
+
 class UserSessionLog(BaseLogModel):
     """
     This model provides a record of a user session in Kolibri.

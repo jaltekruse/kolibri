@@ -16,6 +16,7 @@ from kolibri.core.auth.utils.delete import delete_facility
 from kolibri.core.device.utils import get_device_setting
 from kolibri.core.device.utils import set_device_settings
 from kolibri.core.logger.models import AttemptLog
+from kolibri.core.logger.models import ContentFeedbackLog
 from kolibri.core.logger.models import ContentSessionLog
 from kolibri.core.logger.models import ContentSummaryLog
 from kolibri.core.logger.models import MasteryLog
@@ -125,6 +126,8 @@ def merge_users(source_user, target_user):  # noqa C901
     _merge_log_data(ContentSessionLog)
 
     _merge_log_data(ContentSummaryLog)
+
+    _merge_log_data(ContentFeedbackLog)
 
     _merge_log_data(UserSessionLog)
 
