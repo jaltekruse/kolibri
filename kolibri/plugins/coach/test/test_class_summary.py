@@ -525,6 +525,18 @@ class ClassSummaryStatusTests(APITestCase):
             STARTED,
         )
 
+    def test_progress_in_status(self):
+        """Each entry has the learner's progress on the resource, e.g. an HTML5 app's score."""
+        self._create_summary_log(self.learner, self.video_node, progress=0.25)
+        response = self.client.get(self.url)
+        entry = next(
+            e
+            for e in response.data["content_learner_status"]
+            if e["learner_id"] == self.learner.id
+            and e["content_id"] == self.video_node.content_id
+        )
+        self.assertEqual(entry["progress"], 0.25)
+
     def test_video_completed_status(self):
         """A video with progress == 1 is COMPLETED."""
         self._create_summary_log(self.learner, self.video_node, progress=1.0)

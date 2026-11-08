@@ -60,6 +60,11 @@
                   v-if="tableRow.statusObj"
                   :status="tableRow.statusObj.status"
                 />
+                <StatusProgress
+                  v-if="tableRow.statusObj"
+                  :status="tableRow.statusObj.status"
+                  :progress="tableRow.statusObj.progress"
+                />
                 <KEmptyPlaceholder v-else />
               </td>
               <td>
@@ -93,6 +98,7 @@
 
   import ReportsControls from '../../common/ReportsControls';
   import ReportsResourcesStats from '../../common/tables/ReportsResourcesStats';
+  import StatusProgress from '../../common/status/StatusProgress';
   import { coachStrings } from '../../common/commonCoachStrings';
   import store from '../../../store';
 
@@ -100,6 +106,7 @@
     name: 'LessonLearnerPage',
     components: {
       CoachAppBarPage,
+      StatusProgress,
       MissingResourceAlert,
       ReportsControls,
       ReportsResourcesStats,

@@ -485,6 +485,7 @@ class UnitLessonProgressStatusTests(UnitLessonProgressTestBase):
         self.assertIn("last_activity", status)
         self.assertIn("time_spent", status)
         self.assertIn("tries", status)
+        self.assertEqual(status["progress"], 0.5)
 
 
 class UnitLessonProgressScopingTests(UnitLessonProgressTestBase):

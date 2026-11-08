@@ -29,6 +29,7 @@ exports[`ReportsLearnersTable doesn't render groups information when show groups
   </span></span> <span class="icon-after"><!----></span></span>
             <!---->
           </div>
+          <!---->
         </td>
         <!---->
         <!---->
@@ -50,6 +51,7 @@ exports[`ReportsLearnersTable doesn't render groups information when show groups
   </span></span> <span class="icon-after"><!----></span></span>
             <!---->
           </div>
+          <!---->
         </td>
         <!---->
         <!---->

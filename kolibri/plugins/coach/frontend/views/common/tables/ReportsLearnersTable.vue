@@ -45,6 +45,10 @@
           </td>
           <td v-if="!showQuizStatus(tableRow)">
             <StatusSimple :status="tableRow.statusObj.status" />
+            <StatusProgress
+              :status="tableRow.statusObj.status"
+              :progress="tableRow.statusObj.progress"
+            />
           </td>
           <td v-else-if="tableRow.statusObj.status !== STATUSES.started">
             <StatusSimple :status="tableRow.statusObj.status" />
@@ -106,9 +110,13 @@
   import commonCoach from '../../common';
   import * as csvFields from '../../../csv/fields';
   import CSVExporter from '../../../csv/exporter';
+  import StatusProgress from '../status/StatusProgress';
 
   export default {
     name: 'ReportsLearnersTable',
+    components: {
+      StatusProgress,
+    },
     mixins: [commonCoach, commonCoreStrings],
     props: {
       entries: {

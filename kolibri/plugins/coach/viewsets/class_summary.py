@@ -205,6 +205,7 @@ def content_status_serializer(lesson_data, learners_data, classroom):
             ),
             "last_activity": log["end_timestamp"],
             "time_spent": log["time_spent"],
+            "progress": log["progress"],
             "tries": log["tries"],
         }
         key = (log["user_id"], log["content_id"])

@@ -38,6 +38,7 @@ def _build_content_status(content_id_to_node_ids, learner_ids, course_session):
             ),
             "last_activity": log["end_timestamp"],
             "time_spent": log["time_spent"],
+            "progress": log["progress"],
             "tries": log["tries"],
         }
         for log in content_log_values
