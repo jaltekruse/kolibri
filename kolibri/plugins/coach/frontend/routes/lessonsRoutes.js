@@ -13,6 +13,7 @@ import LessonCreationPage from '../views/lessons/LessonCreationPage';
 
 import { generateResourceHandler } from '../modules/resourceDetail/handlers';
 import LessonResourceLearnersPage from '../views/lessons/reports/LessonResourceLearnersPage';
+import LessonResourceReviewPage from '../views/lessons/reports/LessonResourceReviewPage';
 import LessonLearnerPage from '../views/lessons/reports/LessonLearnerPage.vue';
 import LessonExerciseLearnersPage from '../views/lessons/reports/LessonExerciseLearnersPage.vue';
 import {
@@ -168,6 +169,12 @@ export default [
     name: PageNames.LESSON_RESOURCE_LEARNERS_REPORT,
     path: CLASS + LESSON + RESOURCE + ALL_LEARNERS,
     component: LessonResourceLearnersPage,
+    handler: generateResourceHandler(['resourceId']),
+  },
+  {
+    name: PageNames.LESSON_RESOURCE_REVIEW,
+    path: CLASS + LESSON + RESOURCE + '/review',
+    component: LessonResourceReviewPage,
     handler: generateResourceHandler(['resourceId']),
   },
   {

@@ -7,6 +7,14 @@
         @previewClick="onPreviewClick"
       />
 
+      <KRouterLink
+        v-if="canReviewWork"
+        class="review-link"
+        appearance="raised-button"
+        :text="reviewWorkLabel$()"
+        :to="classRoute(PageNames.LESSON_RESOURCE_REVIEW, { resourceId: $route.params.resourceId })"
+      />
+
       <ReportsControls @export="exportCSV">
         <KCheckbox
           :label="coachString('viewByGroupsLabel')"
@@ -109,6 +117,7 @@
   import ReportsControls from '../../common/ReportsControls';
   import ReportsResourceHeader from '../../common/ReportsResourceHeader';
   import store from '../../../store';
+  import { reviewStrings } from './reviewStrings';
 
   export default {
     name: 'LessonResourceLearnersPage',
@@ -130,7 +139,8 @@
         },
         { hasVisibleHeading: true },
       );
-      return { pageLoading };
+      const { reviewWorkLabel$ } = reviewStrings;
+      return { pageLoading, reviewWorkLabel$ };
     },
     data() {
       return {
@@ -138,6 +148,10 @@
       };
     },
     computed: {
+      // Coaches can review learners' work saved in HTML5 resources, which can show it
+      canReviewWork() {
+        return Boolean(this.resource) && this.resource.kind === this.ContentNodeKinds.HTML5;
+      },
       ...mapState('resourceDetail', ['resource']),
       lesson() {
         return this.lessonMap[this.$route.params.lessonId];
@@ -292,6 +306,10 @@
 <style lang="scss" scoped>
 
   @import '../../common/print-table';
+
+  .review-link {
+    margin-bottom: 16px;
+  }
 
   .group:not(:first-child) {
     margin-top: 42px;
