@@ -1,4 +1,5 @@
 import hashlib
+import json
 import logging
 from datetime import timedelta
 from itertools import groupby
@@ -46,6 +47,7 @@ from kolibri.core.notifications.tasks import wrap_to_save_queue
 from kolibri.utils.time_utils import local_now
 
 from ..models import AttemptLog
+from ..models import ContentFeedbackLog
 from ..models import ContentSessionLog
 from ..models import ContentSummaryLog
 from ..models import MasteryLog
@@ -270,6 +272,56 @@ class LogContext:
         return output
 
 
+# The localStorage key resources find coaches' feedback to the learner on their work in
+FEEDBACK_STORAGE_KEY = "kolibri:feedback"
+
+
+def _content_storage(extra_fields):
+    return (extra_fields.get("contentState") or {}).get("localStorage") or {}
+
+
+def _with_feedback(extra_fields, user, content_id):
+    """
+    Gives the resource coaches' feedback to the learner on their work in it, in its localStorage
+    """
+    feedback = (
+        ContentFeedbackLog.objects.filter(user=user, content_id=content_id)
+        .values_list("data", flat=True)
+        .first()
+    )
+    if feedback is None:
+        return extra_fields
+    content_state = extra_fields.get("contentState") or {}
+    return {
+        **extra_fields,
+        "contentState": {
+            **content_state,
+            "localStorage": {
+                **_content_storage(extra_fields),
+                FEEDBACK_STORAGE_KEY: json.dumps(feedback),
+            },
+        },
+    }
+
+
+def _without_feedback(extra_fields):
+    """Coaches' feedback is kept in its own log, so isn't saved with the learner's work"""
+    storage = _content_storage(extra_fields)
+    if FEEDBACK_STORAGE_KEY not in storage:
+        return extra_fields
+    return {
+        **extra_fields,
+        "contentState": {
+            **extra_fields["contentState"],
+            "localStorage": {
+                key: value
+                for key, value in storage.items()
+                if key != FEEDBACK_STORAGE_KEY
+            },
+        },
+    }
+
+
 @method_decorator(csrf_protect, name="dispatch")
 class ProgressTrackingViewSet(viewsets.GenericViewSet):
     def get_serializer_class(self):
@@ -446,7 +498,7 @@ class ProgressTrackingViewSet(viewsets.GenericViewSet):
 
         output = {
             "progress": summarylog.progress,
-            "extra_fields": summarylog.extra_fields,
+            "extra_fields": _with_feedback(summarylog.extra_fields, user, content_id),
             "time_spent": summarylog.time_spent,
             "complete": summarylog.progress >= 1,
         }
@@ -968,7 +1020,7 @@ class ProgressTrackingViewSet(viewsets.GenericViewSet):
             self._process_completed_notification(summarylog, context)
         if "extra_fields" in validated_data:
             update_fields += ("extra_fields",)
-            summarylog.extra_fields = validated_data["extra_fields"]
+            summarylog.extra_fields = _without_feedback(validated_data["extra_fields"])
 
         summarylog.save(update_fields=update_fields)
         return summarylog

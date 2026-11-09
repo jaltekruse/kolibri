@@ -1,6 +1,8 @@
+import json
 import uuid
 
 from django.urls import reverse
+from le_utils.constants import content_kinds
 from rest_framework.status import HTTP_200_OK
 from rest_framework.status import HTTP_201_CREATED
 from rest_framework.status import HTTP_403_FORBIDDEN
@@ -11,7 +13,9 @@ from kolibri.core.auth.test.helpers import KolibriAPITestCase as APITestCase
 from kolibri.core.auth.test.helpers import provision_device
 from kolibri.core.auth.test.test_api import FacilityFactory
 from kolibri.core.auth.test.test_api import FacilityUserFactory
+from kolibri.core.content.models import ContentNode
 from kolibri.core.logger.models import ContentFeedbackLog
+from kolibri.core.logger.models import ContentSummaryLog
 
 
 class ContentFeedbackLogAPITestCase(APITestCase):
@@ -107,3 +111,73 @@ class ContentFeedbackLogAPITestCase(APITestCase):
         )
         self.assertEqual(response.status_code, HTTP_200_OK)
         self.assertEqual([entry["user"] for entry in response.data], [self.learner.id])
+
+
+class FeedbackInProgressTrackingTestCase(APITestCase):
+    databases = "__all__"
+
+    @classmethod
+    def setUpTestData(cls):
+        provision_device()
+        cls.facility = FacilityFactory.create()
+        cls.learner = FacilityUserFactory(facility=cls.facility)
+        cls.node = ContentNode.objects.create(
+            id=uuid.uuid4().hex,
+            content_id=uuid.uuid4().hex,
+            channel_id=uuid.uuid4().hex,
+            kind=content_kinds.HTML5,
+            title="Resource",
+        )
+
+    def setUp(self):
+        self.client.login(
+            username=self.learner.username,
+            password=DUMMY_PASSWORD,
+            facility=self.facility,
+        )
+
+    def start_session(self):
+        return self.client.post(
+            reverse("kolibri:core:trackprogress-list"),
+            {
+                "node_id": self.node.id,
+                "content_id": self.node.content_id,
+                "channel_id": self.node.channel_id,
+                "kind": self.node.kind,
+            },
+            format="json",
+        ).data
+
+    def save_work(self, session_id, storage):
+        return self.client.put(
+            reverse("kolibri:core:trackprogress-detail", kwargs={"pk": session_id}),
+            {"extra_fields": {"contentState": {"localStorage": storage}}},
+            format="json",
+        )
+
+    def test_resource_gets_feedback_in_its_storage(self):
+        session = self.start_session()
+        self.save_work(session["session_id"], {"work": "1"})
+        ContentFeedbackLog.objects.create(
+            user=self.learner, content_id=self.node.content_id, data={"score": 3}
+        )
+        session = self.start_session()
+        self.assertEqual(
+            session["extra_fields"]["contentState"]["localStorage"],
+            {"work": "1", "kolibri:feedback": json.dumps({"score": 3})},
+        )
+
+    def test_resource_storage_without_feedback(self):
+        session = self.start_session()
+        self.assertNotIn("contentState", session["extra_fields"])
+
+    def test_feedback_not_saved_with_work(self):
+        session = self.start_session()
+        self.save_work(
+            session["session_id"],
+            {"work": "1", "kolibri:feedback": json.dumps({"score": 5})},
+        )
+        summarylog = ContentSummaryLog.objects.get(user=self.learner)
+        self.assertEqual(
+            summarylog.extra_fields["contentState"]["localStorage"], {"work": "1"}
+        )
