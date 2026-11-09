@@ -29,6 +29,8 @@ from kolibri.core.auth.models import dataset_cache
 from kolibri.core.courses.models import CourseSession
 from kolibri.core.exams.models import Exam
 from kolibri.core.lessons.models import Lesson
+from kolibri.core.lessons.utils import lesson_content_id
+from kolibri.core.lessons.utils import nodes_with_progress_per_lesson
 from kolibri.core.logger.constants import interaction_types
 from kolibri.core.logger.constants.exercise_attempts import MAPPING
 from kolibri.core.logger.utils.pre_post_test import get_synthetic_content_id
@@ -341,6 +343,10 @@ class ProgressTrackingViewSet(viewsets.GenericViewSet):
             if lesson_id:
                 self._check_lesson_permissions(user, lesson_id)
                 context["lesson_id"] = lesson_id
+                # a resource that keeps learners' progress for each lesson it's in
+                per_lesson = nodes_with_progress_per_lesson([node_id])
+                if node_id in per_lesson:
+                    content_id = lesson_content_id(lesson_id, per_lesson[node_id])
             if course_session_id:
                 self._check_course_session_permissions(user, course_session_id)
                 context["course_session_id"] = course_session_id

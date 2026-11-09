@@ -74,6 +74,16 @@ def _consolidate_lessons_data(request, lessons):
     contentnode_map = _map_contentnodes(request, lesson_contentnode_ids)
 
     progress_map = {l["content_id"]: l["progress"] for l in contentnode_progress}
+    # resources that keep learners' progress for each lesson they are in have content_ids of their own in lessons
+    lesson_content_ids = {
+        resource["content_id"] for lesson in lessons for resource in lesson["resources"]
+    } - set(progress_map)
+    if lesson_content_ids and request.user.is_authenticated:
+        progress_map.update(
+            ContentSummaryLog.objects.filter(
+                user=request.user, content_id__in=lesson_content_ids
+            ).values_list("content_id", "progress")
+        )
 
     for lesson in lessons:
         lesson["progress"] = {

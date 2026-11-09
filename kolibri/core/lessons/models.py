@@ -11,6 +11,8 @@ from kolibri.core.auth.permissions.base import RoleBasedPermissions
 from kolibri.core.content.utils.assignment import ContentAssignmentManager
 from kolibri.core.fields import DateTimeTzField
 from kolibri.core.fields import JSONField
+from kolibri.core.lessons.utils import lesson_content_id
+from kolibri.core.lessons.utils import nodes_with_progress_per_lesson
 from kolibri.core.notifications.models import LearnerProgressNotification
 from kolibri.utils.time_utils import local_now
 
@@ -97,6 +99,28 @@ class Lesson(AbstractFacilityDataModel):
     def pre_save(self, **kwargs):
         super().pre_save(**kwargs)
         self.enforce_authoring_user_field("created_by", **kwargs)
+        self._set_lesson_content_ids()
+
+    def _set_lesson_content_ids(self):
+        """
+        Give the resources that keep learners' progress for each lesson they are in the content_id their progress
+        in this lesson is kept under
+        """
+        if not self.resources:
+            return
+        per_lesson = nodes_with_progress_per_lesson(
+            [resource["contentnode_id"] for resource in self.resources]
+        )
+        if not per_lesson:
+            return
+        if not self.id:
+            # as it would be when saved, for a new lesson
+            self.id = self.calculate_uuid()
+        for resource in self.resources:
+            if resource["contentnode_id"] in per_lesson:
+                resource["content_id"] = lesson_content_id(
+                    self.id, per_lesson[resource["contentnode_id"]]
+                )
 
     def delete(self, using=None, keep_parents=False):
         """

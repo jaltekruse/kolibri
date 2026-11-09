@@ -3,7 +3,9 @@ import useUser from 'kolibri/composables/useUser';
 import { handleApiError } from 'kolibri/utils/appError';
 import { get } from '@vueuse/core';
 import { pageLoading } from 'kolibri-common/composables/usePageLoading';
-import useContentNodeProgress from '../../composables/useContentNodeProgress';
+import useContentNodeProgress, {
+  setContentNodeProgress,
+} from '../../composables/useContentNodeProgress';
 import { LearnerLessonResource } from '../../apiResources';
 import { ClassesPageNames } from '../../constants';
 
@@ -23,14 +25,24 @@ export function showLessonPlaylist(store, { lessonId }) {
       store.commit('SET_PAGE_NAME', ClassesPageNames.LESSON_PLAYLIST);
       store.commit('lessonPlaylist/SET_CURRENT_LESSON', lesson);
       if (lesson.resources.length) {
-        return contentNodePromise;
+        return contentNodePromise.then(contentNodes => ({ lesson, contentNodes }));
       }
-      return Promise.resolve([]);
+      return { lesson, contentNodes: [] };
     })
-    .then(contentNodes => {
+    .then(({ lesson, contentNodes }) => {
+      // Resources that keep learners' progress for each lesson they are in have a content_id
+      // of their own in the lesson, which their progress in this lesson is kept under
+      const lessonContentIds = {};
+      for (const resource of lesson.resources) {
+        lessonContentIds[resource.contentnode_id] = resource.content_id;
+        setContentNodeProgress({ content_id: resource.content_id, progress: resource.progress });
+      }
       const contentNodesMap = {};
       for (const node of contentNodes) {
-        contentNodesMap[node.id] = node;
+        contentNodesMap[node.id] = {
+          ...node,
+          content_id: lessonContentIds[node.id] || node.content_id,
+        };
       }
       store.commit('lessonPlaylist/SET_LESSON_CONTENTNODES', contentNodesMap);
       pageLoading.value = false;

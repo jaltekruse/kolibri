@@ -46,6 +46,58 @@ describe('coach summary module', () => {
     });
   });
 
+  describe('resources that keep progress for each lesson', () => {
+    const NODE = { node_id: 'node', content_id: 'content', title: 'Free Math', kind: 'html5' };
+    const LEARNER = sampleServerResponse.learners[0];
+    function setState() {
+      const state = store.state;
+      store.mutations.SET_STATE(state, {
+        ...sampleServerResponse,
+        content: [NODE],
+        content_learner_status: [
+          {
+            learner_id: LEARNER.id,
+            content_id: 'content-in-lesson',
+            status: STATUSES.completed,
+            last_activity: null,
+            time_spent: 10,
+          },
+        ],
+        lessons: [
+          {
+            id: 'lesson',
+            title: 'Lesson',
+            date_created: '2019-01-24 23:14:52.831000+00:00',
+            node_ids: ['node'],
+            resources: [{ contentnode_id: 'node', content_id: 'content-in-lesson' }],
+            groups: [],
+            assignments: [],
+            learner_ids: [],
+          },
+        ],
+      });
+      return state;
+    }
+
+    it('gives the lesson content its content_id in the lesson', () => {
+      const state = setState();
+      expect(store.getters.lessonContent(state)(state.lessonMap.lesson)).toEqual([
+        { ...NODE, content_id: 'content-in-lesson' },
+      ]);
+      expect(state.contentMap['content-in-lesson']).toEqual({
+        ...NODE,
+        content_id: 'content-in-lesson',
+      });
+    });
+
+    it("uses the learner's progress in the lesson for their lesson status", () => {
+      const state = setState();
+      expect(store.getters.lessonLearnerStatusMap(state).lesson[LEARNER.id].status).toBe(
+        STATUSES.completed,
+      );
+    });
+  });
+
   it('_itemMap behaves as expected', () => {
     const input = [
       {

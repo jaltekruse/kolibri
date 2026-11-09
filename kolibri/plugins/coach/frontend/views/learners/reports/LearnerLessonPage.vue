@@ -139,7 +139,7 @@
         return this.learnerMap[this.$route.params.learnerId];
       },
       table() {
-        const contentArray = this.lesson.node_ids.map(node_id => this.contentNodeMap[node_id]);
+        const contentArray = this.lessonContent(this.lesson);
         return contentArray.map((content, index) => {
           if (!content) {
             return this.missingResourceObj(index);

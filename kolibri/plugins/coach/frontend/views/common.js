@@ -99,6 +99,7 @@ export default {
       'contentStatuses',
       'adHocGroups',
       'lessons',
+      'lessonContent',
       'lessonStatuses',
       'lessonLearnerStatusMap',
       'notificationModuleData',

@@ -174,7 +174,18 @@ def content_status_serializer(lesson_data, learners_data, classroom):
 
     learner_ids = {learner["id"] for learner in learners_data}
 
-    content_ids = set(content_map.values())
+    content_id_to_node_ids = {}
+    for node_id, content_id in content_map.items():
+        content_id_to_node_ids.setdefault(content_id, []).append(node_id)
+    # resources that keep learners' progress for each lesson they are in have content_ids of their own in lessons
+    for lesson in lesson_data:
+        for resource in lesson.get("resources") or []:
+            if resource["contentnode_id"] in content_map:
+                node_ids = content_id_to_node_ids.setdefault(resource["content_id"], [])
+                if resource["contentnode_id"] not in node_ids:
+                    node_ids.append(resource["contentnode_id"])
+
+    content_ids = set(content_id_to_node_ids)
 
     content_log_values = get_content_log_values(content_ids, learner_ids)
 
@@ -186,10 +197,6 @@ def content_status_serializer(lesson_data, learners_data, classroom):
         (s.pop("learner_id"), s.pop("summarylog__content_id")): s
         for s in _get_quiz_status(masterylog_queryset)
     }
-
-    content_id_to_node_ids = {}
-    for node_id, content_id in content_map.items():
-        content_id_to_node_ids.setdefault(content_id, []).append(node_id)
 
     needs_help, completed = fetch_notification_maps(
         classroom_id=classroom.id,

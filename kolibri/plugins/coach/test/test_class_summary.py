@@ -592,3 +592,73 @@ class ClassSummaryStatusTests(APITestCase):
             self._get_status(response, self.learner.id, self.exercise_node.content_id),
             COMPLETED,
         )
+
+
+class ClassSummaryProgressPerLessonTests(APITestCase):
+    """
+    Resources that keep learners' progress for each lesson they are in report the progress
+    kept under their content_id in the lesson
+    """
+
+    databases = "__all__"
+
+    @classmethod
+    def setUpTestData(cls):
+        provision_device()
+        cls.facility = Facility.objects.create(name="Facility")
+        cls.classroom = Classroom.objects.create(name="Classroom", parent=cls.facility)
+        cls.coach = helpers.create_coach(
+            "perlessoncoach", "password", cls.facility, classroom=cls.classroom
+        )
+        cls.learner = helpers.create_learner(
+            "perlessonlearner", "password", cls.facility, cls.classroom
+        )
+        cls.node = ContentNode.objects.create(
+            id=uuid.uuid4().hex,
+            content_id=uuid.uuid4().hex,
+            channel_id=uuid.uuid4().hex,
+            title="Per lesson",
+            kind=content_kinds.HTML5,
+            available=True,
+            options={"progress_per_lesson": True},
+        )
+        cls.lesson = models.Lesson.objects.create(
+            title="Lesson",
+            is_active=True,
+            collection=cls.classroom,
+            created_by=cls.coach,
+            resources=[
+                {
+                    "contentnode_id": cls.node.id,
+                    "content_id": cls.node.content_id,
+                    "channel_id": cls.node.channel_id,
+                }
+            ],
+        )
+        cls.url = reverse(
+            "kolibri:kolibri.plugins.coach:classsummary-detail",
+            kwargs={"pk": cls.classroom.id},
+        )
+
+    def test_reports_progress_in_the_lesson(self):
+        content_id = self.lesson.resources[0]["content_id"]
+        now = timezone.now()
+        ContentSummaryLog.objects.create(
+            user=self.learner,
+            content_id=content_id,
+            channel_id=self.node.channel_id,
+            start_timestamp=now,
+            end_timestamp=now,
+            progress=1.0,
+            kind=content_kinds.HTML5,
+        )
+        self.client.login(username="perlessoncoach", password="password")
+        response = self.client.get(self.url)
+        self.assertEqual(
+            [
+                (entry["content_id"], entry["status"])
+                for entry in response.data["content_learner_status"]
+            ],
+            [(content_id, COMPLETED)],
+        )
+        self.assertNotEqual(content_id, self.node.content_id)

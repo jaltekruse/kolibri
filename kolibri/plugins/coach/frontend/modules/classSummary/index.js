@@ -121,6 +121,30 @@ export function _statusMap(statuses, key) {
   return statusMap;
 }
 
+/*
+ * The content_id a resource's progress in a lesson is kept under: resources that keep learners'
+ * progress for each lesson they are in have a content_id of their own in the lesson
+ */
+function _lessonContentId(state, lesson, node_id) {
+  const resource = (lesson.resources || []).find(r => r.contentnode_id === node_id);
+  return resource ? resource.content_id : get(state.contentNodeMap, [node_id, 'content_id'], null);
+}
+
+/*
+ * Adds to the contentMap the content_ids resources have of their own in lessons
+ */
+function _addLessonContent(contentMap, contentNodeMap, lessons) {
+  for (const lesson of lessons) {
+    for (const resource of lesson.resources || []) {
+      const node = contentNodeMap[resource.contentnode_id];
+      if (node && !contentMap[resource.content_id]) {
+        contentMap[resource.content_id] = { ...node, content_id: resource.content_id };
+      }
+    }
+  }
+  return contentMap;
+}
+
 function _lessonStatusForLearner(state, lessonId, learnerId) {
   const lesson = state.lessonMap[lessonId];
   // Add trap door for lesson status, if a lesson has no resources
@@ -133,7 +157,7 @@ function _lessonStatusForLearner(state, lessonId, learnerId) {
     if (!state.contentNodeMap[node_id]) {
       return { status: STATUSES.notStarted };
     }
-    const content_id = state.contentNodeMap[node_id].content_id;
+    const content_id = _lessonContentId(state, lesson, node_id);
     return {
       status: get(
         state.contentLearnerStatusMap,
@@ -278,6 +302,18 @@ export default {
       return Object.values(state.lessonMap);
     },
     /*
+     * The content in a lesson, with the content_id progress in the lesson is kept under,
+     * and undefined for resources missing from the device
+     */
+    lessonContent(state) {
+      return function getContent(lesson) {
+        return lesson.node_ids.map(node_id => {
+          const node = state.contentNodeMap[node_id];
+          return node && { ...node, content_id: _lessonContentId(state, lesson, node_id) };
+        });
+      };
+    },
+    /*
      * lessonStatuses := [
      *   { lesson_id, learner_id, status, last_activity }, ...
      * ]
@@ -303,7 +339,7 @@ export default {
           // for all content items this learner has interacted with
           // determine the latest interaction activity
           Object.values(lesson.node_ids).forEach(node_id => {
-            const content_id = get(state.contentNodeMap, [node_id, 'content_id'], null);
+            const content_id = _lessonContentId(state, lesson, node_id);
             const last_activity = get(
               state.contentLearnerStatusMap,
               [content_id, learner.id, 'last_activity'],
@@ -375,6 +411,7 @@ export default {
         obj['kind'] = obj['kind'] == 'h5p' ? 'html5' : obj['kind'];
         return obj;
       });
+      const contentNodeMap = _itemMap(patchedSummaryContent, 'node_id');
       Object.assign(state, {
         id: summary.id,
         facility_id: summary.facility_id,
@@ -386,8 +423,12 @@ export default {
         adHocGroupsMap: _itemMap(summary.adhoclearners, 'id'),
         examMap,
         examLearnerStatusMap: _statusMap(summary.exam_learner_status, 'exam_id'),
-        contentMap: _itemMap(patchedSummaryContent, 'content_id'),
-        contentNodeMap: _itemMap(patchedSummaryContent, 'node_id'),
+        contentMap: _addLessonContent(
+          _itemMap(patchedSummaryContent, 'content_id'),
+          contentNodeMap,
+          summary.lessons,
+        ),
+        contentNodeMap,
         contentLearnerStatusMap: _statusMap(summary.content_learner_status, 'content_id'),
         lessonMap: _mapLessons(summary.lessons),
       });

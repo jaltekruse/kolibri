@@ -210,11 +210,15 @@
             return this.missingResourceObj(resource.contentnode_id);
           }
 
-          const tally = this.getContentStatusTally(content.content_id, this.recipients);
+          // Resources that keep learners' progress for each lesson they are in
+          // have a content_id of their own in the lesson
+          const content_id = resource.content_id || content.content_id;
+          const tally = this.getContentStatusTally(content_id, this.recipients);
           const tableRow = {
             ...content,
+            content_id,
             node_id: content.id,
-            avgTimeSpent: this.getContentAvgTimeSpent(content.content_id, this.recipients),
+            avgTimeSpent: this.getContentAvgTimeSpent(content_id, this.recipients),
             tally,
             hasAssignments: Object.values(tally).reduce((a, b) => a + b, 0),
           };
