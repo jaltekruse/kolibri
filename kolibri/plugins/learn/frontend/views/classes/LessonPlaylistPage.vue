@@ -53,11 +53,17 @@
         />
       </section>
       <p
-        v-else
+        v-else-if="!webPages.length"
         class="no-resources-message"
       >
         {{ $tr('noResourcesInLesson') }}
       </p>
+      <LessonWebPageList
+        v-if="webPages.length"
+        :classId="$route.params.classId"
+        :lessonId="$route.params.lessonId"
+        :webPages="webPages"
+      />
     </div>
     <KCircularLoader v-else />
   </LearnAppBarPage>
@@ -68,6 +74,7 @@
 <script>
 
   import { mapMutations, mapState } from 'vuex';
+  import { useRoute } from 'vue-router/composables';
   import KBreadcrumbs from 'kolibri-design-system/lib/KBreadcrumbs';
   import useKResponsiveWindow from 'kolibri-design-system/lib/composables/useKResponsiveWindow';
   import ProgressIcon from 'kolibri-common/components/labels/ProgressIcon';
@@ -79,16 +86,19 @@
   import ResourceSyncingUiAlert from '../ResourceSyncingUiAlert';
   import useContentLink from '../../composables/useContentLink';
   import useContentNodeProgress from '../../composables/useContentNodeProgress';
+  import useLessonWebPages from '../../composables/useLessonWebPages';
   import { PageNames, ClassesPageNames } from '../../constants';
   import commonLearnStrings from '../commonLearnStrings';
   import LearnAppBarPage from '../LearnAppBarPage';
   import HybridLearningLessonCard from '../HybridLearningLessonCard';
+  import LessonWebPageList from '../LessonResponses/LessonWebPageList';
 
   export default {
     name: 'LessonPlaylistPage',
     components: {
       KBreadcrumbs,
       HybridLearningLessonCard,
+      LessonWebPageList,
       ContentIcon,
       ProgressIcon,
       LearnAppBarPage,
@@ -102,10 +112,13 @@
       const { genContentLinkBackLinkCurrentPage } = useContentLink();
       const { contentNodeProgressMap } = useContentNodeProgress();
       const { windowIsSmall } = useKResponsiveWindow();
+      const route = useRoute();
+      const { webPages } = useLessonWebPages(() => route.params.lessonId);
       return {
         contentNodeProgressMap,
         genContentLinkBackLinkCurrentPage,
         pageLoading,
+        webPages,
         windowIsSmall,
       };
     },

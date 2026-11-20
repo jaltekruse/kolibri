@@ -21,6 +21,7 @@
       :contentKind="contentKind"
       :showBookmark="allowBookmark"
       :showDownloadButton="showDownloadButton"
+      :showQuickAssign="showQuickAssign"
       :isDownloading="isDownloading"
       :downloadingLoaderTooltip="downloadRequestsTranslator.$tr('downloadStartedLabel')"
       data-testid="learningActivityBar"
@@ -30,6 +31,7 @@
       @viewResourceList="toggleResourceList"
       @viewInfo="openSidePanel"
       @completionModal="openCompletionModal"
+      @quickAssign="quickAssign"
     />
     <KLinearLoader
       v-if="loading"
@@ -61,20 +63,26 @@
       >
         {{ pageHeading }}
       </h1>
-      <ContentPage
-        ref="contentPage"
-        class="content"
-        data-testid="contentPage"
-        :content="content"
-        :lessonId="lessonId"
-        :style="{
-          backgroundColor: content.assessmentmetadata ? '' : 'var(--tokens-textInverted)',
-        }"
-        :allowMarkComplete="allowMarkComplete"
-        @mounted="contentPageMounted = true"
-        @finished="$refs.activityBar && $refs.activityBar.animateNextSteps()"
-        @error="onError"
-      />
+      <LessonResponsesLayout
+        :lessonId="isUserLoggedIn ? lessonId : null"
+        :contentnodeId="content.id"
+        :title="content.title"
+      >
+        <ContentPage
+          ref="contentPage"
+          class="content"
+          data-testid="contentPage"
+          :content="content"
+          :lessonId="lessonId"
+          :style="{
+            backgroundColor: content.assessmentmetadata ? '' : 'var(--tokens-textInverted)',
+          }"
+          :allowMarkComplete="allowMarkComplete"
+          @mounted="contentPageMounted = true"
+          @finished="$refs.activityBar && $refs.activityBar.animateNextSteps()"
+          @error="onError"
+        />
+      </LessonResponsesLayout>
     </div>
 
     <GlobalSnackbar />
@@ -167,6 +175,8 @@
   import Modalities from 'kolibri-constants/Modalities';
 
   import AuthMessage from 'kolibri/components/AuthMessage';
+  import urls from 'kolibri/urls';
+  import redirectBrowser from 'kolibri/utils/redirectBrowser';
   import ContentNodeResource from 'kolibri-common/apiResources/ContentNodeResource';
   import useUser from 'kolibri/composables/useUser';
   import { error, handleApiError, clearError } from 'kolibri/utils/appError';
@@ -197,6 +207,7 @@
   import commonLearnStrings from './commonLearnStrings';
   import CurrentlyViewedResourceMetadata from './CurrentlyViewedResourceMetadata';
   import ContentPage from './ContentPage';
+  import LessonResponsesLayout from './LessonResponses/LessonResponsesLayout';
   import LearningActivityBar from './LearningActivityBar';
   import AlsoInThis from './AlsoInThis';
 
@@ -207,6 +218,7 @@
       AppError,
       AuthMessage,
       ContentPage,
+      LessonResponsesLayout,
       SidePanelModal,
       GlobalSnackbar,
       LearningActivityBar,
@@ -402,6 +414,10 @@
       contentProgress() {
         return this.content ? this.contentNodeProgressMap[this.content.content_id] : null;
       },
+      showQuickAssign() {
+        // Exercises from this device's library, which coaches can share with a link
+        return this.hasRole && !this.deviceId && this.contentKind === ContentNodeKinds.EXERCISE;
+      },
       contentKind() {
         return this.content ? this.content.kind : null;
       },
@@ -531,6 +547,10 @@
       this.initializeState();
     },
     methods: {
+      quickAssign() {
+        const coach = urls['kolibri:kolibri.plugins.coach:coach']();
+        redirectBrowser(`${coach}#/quick-assign?exercise=${this.content.id}`);
+      },
       initializeState() {
         this.bookmark = null;
         this.showViewResourcesSidePanel = false;

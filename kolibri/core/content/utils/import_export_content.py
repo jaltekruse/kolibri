@@ -5,7 +5,9 @@ from django.db.models import Min
 from django.db.models import Q
 from le_utils.constants import content_kinds
 
+from kolibri.core.content.hooks import StreamedContentHook
 from kolibri.core.content.models import ContentNode
+from kolibri.core.content.models import File
 from kolibri.core.content.models import LocalFile
 from kolibri.core.content.utils.content_types_tools import (
     renderable_contentnodes_q_filter,
@@ -107,6 +109,7 @@ def get_import_export_data(
     topic_thumbnails=True,
     all_thumbnails=False,
     check_file_availability=True,
+    stream=False,
 ):
     """
     Helper function that calls get_import_export_nodes followed by
@@ -129,6 +132,7 @@ def get_import_export_data(
         available=available,
         topic_thumbnails=topic_thumbnails,
         all_thumbnails=all_thumbnails,
+        stream=stream,
     )
 
 
@@ -222,14 +226,19 @@ def get_content_nodes_data(  # noqa: C901
     available=None,
     topic_thumbnails=True,
     all_thumbnails=False,
+    stream=False,
 ):
     """
     Returns a set of resources, file names, and a total size in bytes for all
     data files associated with the content nodes in nodes_queries_list.
+
+    With stream, it leaves out the files that plugins play their resources
+    without, such as videos' files when they play from YouTube.
     """
 
     queried_file_objects = {}
     number_of_resources = 0
+    streamed_files = StreamedContentHook.files_to_stream_filter() if stream else None
 
     if all_thumbnails:
         file_objects = LocalFile.objects.filter(
@@ -251,6 +260,12 @@ def get_content_nodes_data(  # noqa: C901
             file_objects = file_objects.filter(available=available)
         if all_thumbnails:
             file_objects = file_objects.filter(files__thumbnail=False)
+        if streamed_files is not None:
+            file_objects = file_objects.exclude(
+                files__in=File.objects.filter(
+                    streamed_files, contentnode__channel_id=channel_id
+                )
+            )
         for f in file_objects:
             queried_file_objects[f["id"]] = f
 

@@ -200,6 +200,7 @@
   import TooltipTour from 'kolibri/components/onboarding/TooltipTour';
   import useTour from 'kolibri/composables/useTour';
   import useUser from 'kolibri/composables/useUser';
+  import { quickAssignStrings } from 'kolibri-common/strings/quickAssignStrings';
   import DeviceConnectionStatus from './DeviceConnectionStatus.vue';
   import commonLearnStrings from './commonLearnStrings';
 
@@ -358,6 +359,11 @@
       /**
        * Shows the download button when truthy
        */
+      // For coaches: offers to share the resource as an assignment anyone with a link can join
+      showQuickAssign: {
+        type: Boolean,
+        default: false,
+      },
       showDownloadButton: {
         type: Boolean,
         required: false,
@@ -411,6 +417,15 @@
             dataTest: this.isLessonContext ? 'viewLessonPlanButton' : 'viewTopicResourcesButton',
           },
         ];
+        if (this.showQuickAssign) {
+          actions.push({
+            id: 'quick-assign',
+            icon: 'lesson',
+            label: quickAssignStrings.quickAssignAction$(),
+            event: 'quickAssign',
+            dataTest: 'quickAssignButton',
+          });
+        }
         if (this.showBookmark) {
           actions.push({
             id: 'bookmark',

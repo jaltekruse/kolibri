@@ -24,7 +24,8 @@ const langSpec = {
 
 const fileSpec = {
   id: { type: String, required: true },
-  storage_url: { type: String, required: true },
+  // None for a file that isn't on the device
+  storage_url: { type: String, default: null },
   extension: { type: String, required: true },
   available: { type: Boolean, required: true },
   file_size: { type: Number, required: true },
@@ -268,9 +269,17 @@ export default {
       return getDefaultFile(getRenderableFiles(files.value));
     });
 
-    const defaultItemPreset = computed(() =>
-      getFilePreset(getDefaultFile(getRenderableFiles(files.value)), props.preset),
-    );
+    // A resource can be available without its files on the device, when its viewer
+    // plays it from elsewhere, as a video from YouTube: its files still say which
+    // viewer that is
+    const viewerFile = computed(() => {
+      if (defaultFile.value || !props.contentNode?.available) {
+        return defaultFile.value;
+      }
+      return getDefaultFile(getRenderableFiles(files.value, { includeUnavailable: true }));
+    });
+
+    const defaultItemPreset = computed(() => getFilePreset(viewerFile.value, props.preset));
 
     const options = computed(() => {
       return props.contentNode?.options || {};

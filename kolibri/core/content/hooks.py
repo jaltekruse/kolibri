@@ -6,7 +6,9 @@ Hooks for managing the display and viewing of content.
 """
 
 import json
+import operator
 from abc import abstractmethod
+from functools import reduce
 
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
@@ -41,6 +43,17 @@ class ContentViewerHook(WebpackBundleHook, WebpackInclusionMixin):
 
     #: Whether to allow object tag handling (defaults to False for sandboxing compatibility)
     allow_object_tag = False
+
+    #: Whether the content origin serves this plugin's static directory, for
+    #: pages the viewer frames from there
+    sandbox_static = False
+
+    @property
+    def sandbox_static_path(self):
+        """
+        Returns the filesystem path to the plugin's static directory.
+        """
+        return str(files(self._module_path).joinpath("static"))
 
     @classmethod
     def all_css_selectors(cls):
@@ -127,12 +140,7 @@ class SandboxedContentViewerHook(ContentViewerHook):
     #: Bundle ID of the sandbox handler, declared in buildConfig.js with sandbox_handler: true
     sandbox_handler_id = "sandbox_handler"
 
-    @property
-    def sandbox_static_path(self):
-        """
-        Returns the filesystem path to the plugin's static directory.
-        """
-        return str(files(self._module_path).joinpath("static"))
+    sandbox_static = True
 
     @classmethod
     def get_sandbox_static_paths(cls):
@@ -142,7 +150,8 @@ class SandboxedContentViewerHook(ContentViewerHook):
 
         Includes:
         - Core content static directory (kolibri/core/content/static)
-        - Plugin static directories for each registered sandbox handler
+        - Plugin static directories for each registered sandbox handler, and
+          each content viewer that sets sandbox_static
 
         All of these are mounted at one URL root, and the first location holding a
         path wins, so a plugin must namespace its own subdirectory (core is mounted
@@ -150,7 +159,9 @@ class SandboxedContentViewerHook(ContentViewerHook):
         """
         core_static_path = str(files("kolibri.core.content").joinpath("static"))
         return [core_static_path] + [
-            hook.sandbox_static_path for hook in cls.registered_hooks
+            hook.sandbox_static_path
+            for hook in ContentViewerHook.registered_hooks
+            if hook.sandbox_static
         ]
 
     @property
@@ -224,3 +235,83 @@ class ShareFileHook(KolibriHook):
     def execute_file_share(cls, filename, message):
         for hook in cls.registered_hooks:
             hook.share_file(filename, message)
+
+
+@define_hook
+class ChannelImportHook(KolibriHook):
+    """
+    A hook for plugins to act on a channel's content nodes once an import has
+    replaced them: a new channel, or a new version of one.
+    """
+
+    @abstractmethod
+    def channel_imported(self, channel_id):
+        pass
+
+    @classmethod
+    def execute_channel_imported(cls, channel_id):
+        for hook in cls.registered_hooks:
+            hook.channel_imported(channel_id)
+
+
+@define_hook
+class ResourceImportHook(KolibriHook):
+    """
+    A hook for plugins to act on a channel's resources once an import has brought
+    their files onto the device.
+    """
+
+    @abstractmethod
+    def resources_imported(self, channel_id):
+        pass
+
+    @classmethod
+    def execute_resources_imported(cls, channel_id):
+        for hook in cls.registered_hooks:
+            hook.resources_imported(channel_id)
+
+
+@define_hook
+class StreamedContentHook(KolibriHook):
+    """
+    A hook for plugins that play some resources without their files on the device,
+    as videos from YouTube. A resource an admin imported that a plugin can play is
+    available without its files, and an import can be asked to leave them out.
+    """
+
+    @property
+    def enabled(self):
+        """Whether the plugin plays resources without their files."""
+        return True
+
+    @abstractmethod
+    def playable_without_files(self):
+        """A Q of the ContentNodes the plugin can play without their files."""
+
+    @abstractmethod
+    def files_to_stream(self):
+        """
+        A Q of the Files an import asked to stream leaves out. What the plugin needs
+        to play their resources, such as a video's YouTube id, can arrive after the
+        import: until then, those resources are not available.
+        """
+
+    @classmethod
+    def _enabled_hooks(cls):
+        return [hook for hook in cls.registered_hooks if hook.enabled]
+
+    @classmethod
+    def is_enabled(cls):
+        return bool(cls._enabled_hooks())
+
+    @classmethod
+    def playable_without_files_filter(cls):
+        """A Q of the ContentNodes some plugin plays without their files, or None."""
+        filters = [hook.playable_without_files() for hook in cls._enabled_hooks()]
+        return reduce(operator.or_, filters) if filters else None
+
+    @classmethod
+    def files_to_stream_filter(cls):
+        """A Q of the Files an import asked to stream leaves out, or None."""
+        filters = [hook.files_to_stream() for hook in cls._enabled_hooks()]
+        return reduce(operator.or_, filters) if filters else None

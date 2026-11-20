@@ -1,5 +1,7 @@
 import { nextTick } from 'vue';
-import { render, screen } from '@testing-library/vue';
+import { render, screen, fireEvent } from '@testing-library/vue';
+import TaskResource from 'kolibri/apiResources/TaskResource';
+import plugin_data from 'kolibri-plugin-data';
 import { createTranslator, i18nSetup } from 'kolibri/utils/i18n';
 import bytesForHumans from 'kolibri/uiText/bytesForHumans';
 import SelectContentPage, { pageTitleStrings } from '../SelectContentPage';
@@ -14,6 +16,10 @@ import NewChannelVersionBanner from '../ManageContentPage/NewChannelVersionBanne
 import SelectionBottomBar from '../ManageContentPage/SelectionBottomBar';
 import router from './testRouter';
 
+jest.mock('kolibri/apiResources/TaskResource');
+jest.mock('kolibri-plugin-data', () => ({}));
+
+const pageTr = createTranslator('SelectContentPage', SelectContentPage.$trs);
 const summaryTr = createTranslator('ChannelContentsSummary', ChannelContentsSummary.$trs);
 const bannerTr = createTranslator('NewChannelVersionBanner', NewChannelVersionBanner.$trs);
 const treeViewerTr = createTranslator('ContentTreeViewer', ContentTreeViewer.$trs);
@@ -165,6 +171,60 @@ describe('SelectContentPage', () => {
           name: treeViewerTr.$tr('selectAll'),
         }),
       ).not.toBeInTheDocument();
+    });
+  });
+
+  describe('playing videos from YouTube', () => {
+    afterEach(() => {
+      delete plugin_data.canStreamVideos;
+    });
+
+    // The checkbox's description is part of its name
+    const streamVideosName = name => name.startsWith(pageTr.$tr('streamVideos'));
+
+    function streamVideosCheckbox() {
+      return screen.queryByRole('checkbox', { name: streamVideosName });
+    }
+
+    function selectResources() {
+      Object.assign(store.state.manageContent.wizard, {
+        selectedDrive: { id: 'a-drive', name: 'A drive' },
+        transferResourceCount: 3,
+      });
+    }
+
+    it("isn't offered when videos can't play from YouTube", () => {
+      renderComponent({ store });
+      expect(streamVideosCheckbox()).not.toBeInTheDocument();
+    });
+
+    it("starts an import that leaves out videos' files when asked to", async () => {
+      plugin_data.canStreamVideos = true;
+      // Left pending: the page would go on to the task list
+      TaskResource.startTask.mockReturnValue(new Promise(() => {}));
+      selectResources();
+      renderComponent({ store });
+
+      await fireEvent.click(streamVideosCheckbox());
+      await fireEvent.click(screen.getByRole('button', { name: bottomBarTr.$tr('importAction') }));
+
+      expect(TaskResource.startTask).toHaveBeenCalledWith(
+        expect.objectContaining({ drive_id: 'a-drive', stream: true }),
+      );
+    });
+
+    it("downloads videos' files unless asked not to", async () => {
+      plugin_data.canStreamVideos = true;
+      // Left pending: the page would go on to the task list
+      TaskResource.startTask.mockReturnValue(new Promise(() => {}));
+      selectResources();
+      renderComponent({ store });
+
+      await fireEvent.click(screen.getByRole('button', { name: bottomBarTr.$tr('importAction') }));
+
+      expect(TaskResource.startTask).toHaveBeenCalledWith(
+        expect.not.objectContaining({ stream: expect.anything() }),
+      );
     });
   });
 });

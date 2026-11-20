@@ -12,6 +12,7 @@ import CoachClassListPage from '../views/CoachClassListPage';
 import ClassLearnersListPage from '../views/ClassLearnersListPage';
 import HomePage from '../views/home/HomePage';
 import CoachPrompts from '../views/CoachPrompts';
+import QuickAssignPage from '../views/quickAssign/QuickAssignPage';
 import HomeActivityPage from '../views/home/HomeActivityPage';
 import StatusTestPage from '../views/common/status/StatusTestPage';
 import { ClassesPageNames } from '../../../learn/frontend/constants';
@@ -135,6 +136,15 @@ export default [
     path: '/coach-prompts',
     component: CoachPrompts,
     handler() {
+      pageLoading.value = false;
+    },
+  },
+  {
+    name: PageNames.QUICK_ASSIGN,
+    path: '/quick-assign',
+    component: QuickAssignPage,
+    handler() {
+      // The page loads its quick assignments itself
       pageLoading.value = false;
     },
   },

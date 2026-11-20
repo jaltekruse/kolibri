@@ -116,6 +116,8 @@ class ChannelResourcesImportValidator(ChannelResourcesValidator):
     fail_on_error = serializers.BooleanField(default=False)
     new_version = serializers.IntegerField(required=False)
     all_thumbnails = serializers.BooleanField(default=False)
+    # Leave out the files that plugins play resources without, as videos from YouTube
+    stream = serializers.BooleanField(default=False)
 
     def validate(self, data):
         job_data = super().validate(data)
@@ -125,6 +127,7 @@ class ChannelResourcesImportValidator(ChannelResourcesValidator):
                 "renderable_only": data.get("renderable_only"),
                 "fail_on_error": data.get("fail_on_error"),
                 "all_thumbnails": data.get("all_thumbnails"),
+                "stream": data.get("stream"),
             }
         )
         if data.get("new_version"):
@@ -175,6 +178,7 @@ def diskcontentimport(
     renderable_only=True,
     fail_on_error=False,
     all_thumbnails=False,
+    stream=False,
 ):
     manager_class = (
         DiskChannelUpdateManager if update else DiskChannelResourceImportManager
@@ -189,6 +193,7 @@ def diskcontentimport(
         renderable_only=renderable_only,
         fail_on_error=fail_on_error,
         all_thumbnails=all_thumbnails,
+        stream=stream,
     )
     manager.run()
 
@@ -281,6 +286,7 @@ def remotecontentimport(
     renderable_only=True,
     fail_on_error=False,
     all_thumbnails=False,
+    stream=False,
     token=None,
 ):
     manager_class = (
@@ -295,6 +301,7 @@ def remotecontentimport(
         renderable_only=renderable_only,
         fail_on_error=fail_on_error,
         all_thumbnails=all_thumbnails,
+        stream=stream,
         token=token,
     )
     manager.run()
@@ -571,6 +578,7 @@ def remoteimport(
     renderable_only=True,
     fail_on_error=False,
     all_thumbnails=False,
+    stream=False,
     token=None,
 ):
     manager_class = (
@@ -585,6 +593,7 @@ def remoteimport(
         renderable_only=renderable_only,
         fail_on_error=fail_on_error,
         all_thumbnails=all_thumbnails,
+        stream=stream,
         import_channel_database=True,
         token=token,
     )
@@ -609,6 +618,7 @@ def diskimport(
     renderable_only=True,
     fail_on_error=False,
     all_thumbnails=False,
+    stream=False,
 ):
     drive = get_mounted_drive_by_id(drive_id)
 
@@ -624,6 +634,7 @@ def diskimport(
         exclude_node_ids=exclude_node_ids,
         fail_on_error=fail_on_error,
         all_thumbnails=all_thumbnails,
+        stream=stream,
         import_channel_database=True,
     )
     manager.run()

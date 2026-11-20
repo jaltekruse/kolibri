@@ -48,7 +48,8 @@
                   },
                 },
               },
-              storage_url: { type: String, required: true },
+              // None for a file that isn't on the device
+              storage_url: { type: String, default: null },
             }),
           );
         },

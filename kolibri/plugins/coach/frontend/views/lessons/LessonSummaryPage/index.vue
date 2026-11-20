@@ -1,6 +1,9 @@
 <template>
 
-  <CoachAppBarPage :loading="pageLoading">
+  <CoachAppBarPage
+    :loading="pageLoading"
+    fullWidth
+  >
     <KGrid v-if="!pageLoading">
       <KGridItem>
         <QuizLessonDetailsHeader
@@ -60,6 +63,12 @@
                 :editable="editable && !$isPrint"
                 :entries="resourcesTable"
                 @change="handleResourcesChange"
+                @editPrompts="resourceForPrompts = $event"
+              />
+              <LessonWebPages
+                :classId="classId"
+                :lessonId="lessonId"
+                :editable="editable && !$isPrint"
               />
             </template>
             <template #[ReportsLessonTabs.LEARNERS]>
@@ -73,6 +82,13 @@
           <ManageLessonModals
             :currentAction="currentAction"
             @cancel="currentAction = ''"
+          />
+          <LessonResourcePromptsModal
+            v-if="resourceForPrompts"
+            :resourceTitle="resourceForPrompts.title"
+            :prompts="promptsFor(resourceForPrompts)"
+            @submit="savePrompts"
+            @cancel="resourceForPrompts = null"
           />
         </KPageContainer>
       </KGridItem>
@@ -105,6 +121,8 @@
   import LessonLearnersTable from './tables/LessonLearnersTable';
   import LessonOptionsDropdownMenu from './LessonOptionsDropdownMenu';
   import ManageLessonModals from './ManageLessonModals';
+  import LessonResourcePromptsModal from './LessonResourcePromptsModal';
+  import LessonWebPages from './LessonWebPages';
 
   const REMOVAL_SNACKBAR_TIME = 5000;
 
@@ -114,9 +132,11 @@
       ReportsControls,
       CoachAppBarPage,
       ManageLessonModals,
+      LessonResourcePromptsModal,
       LessonOptionsDropdownMenu,
       LessonLearnersTable,
       LessonResourcesTable,
+      LessonWebPages,
     },
     mixins: [commonCoach, commonCoreStrings],
     setup() {
@@ -151,6 +171,8 @@
 
       return {
         currentAction: '',
+        // The resources table row whose questions are being edited
+        resourceForPrompts: null,
         ReportsLessonTabs,
         workingResourcesBackup,
         REPORTS_LESSON_TABS_ID,
@@ -215,6 +237,7 @@
             ...content,
             node_id: content.id,
             avgTimeSpent: this.getContentAvgTimeSpent(content.content_id, this.recipients),
+            promptCount: resource.prompts ? resource.prompts.length : 0,
             tally,
             hasAssignments: Object.values(tally).reduce((a, b) => a + b, 0),
           };
@@ -320,6 +343,19 @@
             actionCallback: undo,
             hideCallback: hide,
           },
+        );
+      },
+      promptsFor(tableRow) {
+        const resource = this.workingResources.find(r => r.contentnode_id === tableRow.node_id);
+        return resource?.prompts || [];
+      },
+      async savePrompts(prompts) {
+        const nodeId = this.resourceForPrompts.node_id;
+        this.resourceForPrompts = null;
+        await this.save(
+          this.workingResources.map(resource =>
+            resource.contentnode_id === nodeId ? { ...resource, prompts } : resource,
+          ),
         );
       },
       async handleResourcesChange({ newArray }) {

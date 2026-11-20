@@ -135,6 +135,11 @@
         type: Boolean,
         default: false,
       },
+      // Lets the content use the whole width of the window, for wide content
+      fullWidth: {
+        type: Boolean,
+        default: false,
+      },
     },
     data() {
       return {
@@ -153,7 +158,7 @@
           ? { ...this.paddingTop, ...this.appearanceOverrides }
           : {
             width: '100%',
-            maxWidth: '1064px',
+            maxWidth: this.fullWidth ? '100%' : '1064px',
             margin: 'auto',
             backgroundColor: this.$themePalette.grey.v_100,
             paddingLeft: this.paddingLeftRight,
