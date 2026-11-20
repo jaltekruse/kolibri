@@ -105,13 +105,13 @@ describe('libraryAdapter', () => {
     expect(node).toEqual(files[`nodes/${hex}.json`]);
   });
 
-  it("answers with whole URLs for a node's files, which the export writes relative to the library's data", async () => {
+  it("answers with whole URLs for a node's files, which the export writes relative to the page", async () => {
     const path = `nodes/${id('eqv')}.json`;
     const node = {
       ...files[path],
-      thumbnail: '../content/storage/a/b/ab.png',
+      thumbnail: 'content/storage/a/b/ab.png',
       files: [
-        { id: 'f', storage_url: '../content/storage/c/d/cd.mp4' },
+        { id: 'f', storage_url: 'content/storage/c/d/cd.mp4' },
         { id: 'g', storage_url: null },
       ],
     };
@@ -130,7 +130,7 @@ describe('libraryAdapter', () => {
   it("answers with whole URLs for channels' thumbnails", async () => {
     const channels = files['channels.json'].map(channel => ({
       ...channel,
-      thumbnail: `channel-thumbnails/${channel.id}.png`,
+      thumbnail: `library/channel-thumbnails/${channel.id}.png`,
     }));
     global.fetch = jest.fn(staticHost(DATA_URL, { ...files, 'channels.json': channels }));
 

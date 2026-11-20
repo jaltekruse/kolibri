@@ -9,13 +9,12 @@ import routes from '../../learn/frontend/routes';
 import store from '../../learn/frontend/store';
 import { prepareLearnApp } from '../../learn/frontend/composables/useCoreLearn';
 import createLibraryAdapter from './libraryAdapter';
-import resolvePageUrls from './pageUrls';
 
-// The page's URLs are relative to it, so it can be served from any path
-const resolve = resolvePageUrls(plugin_data.relativeRoots);
-
-// There is no Kolibri server behind this page: the library's files answer its requests
-setRequestAdapter(createLibraryAdapter(resolve(plugin_data.libraryDataUrl)));
+// There is no Kolibri server behind this page: the library's files answer its requests.
+// Their URL is relative to the page, as its other URLs are, so it can be served from
+// any path; a script the export writes before Kolibri's resolves the others.
+const dataUrl = new URL(plugin_data.libraryDataUrl, document.baseURI).href;
+setRequestAdapter(createLibraryAdapter(dataUrl));
 
 // A static host serves the unzipped archives from the page's own origin, the only
 // one it has, rather than from Kolibri's separate zip content origin
