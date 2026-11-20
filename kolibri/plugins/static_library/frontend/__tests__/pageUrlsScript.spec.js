@@ -1,16 +1,5 @@
-import urls from 'kolibri/urls';
-import resolvePageUrls from '../pageUrls';
-
-jest.mock('kolibri/urls', () => ({
-  __esModule: true,
-  // As the export writes them, relative to the page
-  default: {
-    __staticUrl: 'static/',
-    __contentUrl: 'content/storage/',
-    __zipContentUrl: 'content/zipcontent/',
-    __sandboxUrl: 'content/static/sandbox/sandbox-1.html',
-  },
-}));
+// The script the export writes into the page, to run before Kolibri's scripts
+const SCRIPT = '../../templates/static_library/page_urls.js';
 
 // Served from a path, as a GitHub Pages project site
 const PAGE = 'https://example.github.io/library/';
@@ -31,10 +20,17 @@ function read(template) {
   return JSON.parse(text);
 }
 
-describe('resolvePageUrls', () => {
+function runScript() {
+  const script = document.createElement('script');
+  script.setAttribute('data-relative-roots', JSON.stringify(RELATIVE_ROOTS));
+  document.body.appendChild(script);
+  jest.isolateModules(() => require(SCRIPT));
+}
+
+describe('the page URLs script', () => {
   let viewer;
   let plugin;
-  let resolve;
+  let core;
 
   beforeAll(() => {
     const base = document.createElement('base');
@@ -49,13 +45,17 @@ describe('resolvePageUrls', () => {
       youtubePlayerUrl: 'content/static/youtube/player.html',
       note: 'Tom & Jerry <3',
     });
-    resolve = resolvePageUrls(RELATIVE_ROOTS);
-  });
-
-  it("resolves Kolibri's URL settings against the page", () => {
-    expect(urls.__staticUrl).toBe(`${PAGE}static/`);
-    expect(urls.__zipContentUrl).toBe(`${PAGE}content/zipcontent/`);
-    expect(urls.__sandboxUrl).toBe(`${PAGE}content/static/sandbox/sandbox-1.html`);
+    core = addTemplate('data-plugin', 'kolibri.core.default_frontend', {
+      fullCSSFileModern: 'static/assets/fonts/noto-full.css',
+      urls: {
+        prefix: '/',
+        urls: { kolibri_core_example: [['static/example/', []]] },
+        __staticUrl: 'static/',
+        __zipContentUrl: 'content/zipcontent/',
+        __sandboxUrl: 'content/static/sandbox/sandbox-1.html',
+      },
+    });
+    runScript();
   });
 
   it("resolves the URLs in content viewers' and plugins' data against the page", () => {
@@ -70,8 +70,16 @@ describe('resolvePageUrls', () => {
     });
   });
 
-  it("resolves the export's URLs it is given, and leaves other strings alone", () => {
-    expect(resolve('library/')).toBe(`${PAGE}library/`);
-    expect(resolve('html5_zip')).toBe('html5_zip');
+  it("resolves Kolibri's URL settings against the page, but not its API's URL patterns", () => {
+    expect(read(core)).toEqual({
+      fullCSSFileModern: `${PAGE}static/assets/fonts/noto-full.css`,
+      urls: {
+        prefix: '/',
+        urls: { kolibri_core_example: [['static/example/', []]] },
+        __staticUrl: `${PAGE}static/`,
+        __zipContentUrl: `${PAGE}content/zipcontent/`,
+        __sandboxUrl: `${PAGE}content/static/sandbox/sandbox-1.html`,
+      },
+    });
   });
 });

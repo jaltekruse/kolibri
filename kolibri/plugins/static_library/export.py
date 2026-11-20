@@ -127,8 +127,9 @@ def _write_channel_thumbnail(data_dir, channel):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "wb") as f:
         f.write(urlsafe_b64decode(encoded))
-    # Relative to the library's data, as its other URLs are
-    return f"channel-thumbnails/{filename}"
+    return relative_url(
+        f"{library_data_url()}channel-thumbnails/{filename}", library_page_url()
+    )
 
 
 def _export_channels(data_dir, channels):
@@ -182,13 +183,13 @@ def _leave_out_files(node, file_ids):
             f.update(available=False, storage_url=None)
 
 
-def _relative_to_library_data(node):
+def _relative_to_page(node):
     # So the library works wherever it is served from
     if node["thumbnail"]:
-        node["thumbnail"] = relative_url(node["thumbnail"], library_data_url())
+        node["thumbnail"] = relative_url(node["thumbnail"], library_page_url())
     for f in node["files"]:
         if f["storage_url"]:
-            f["storage_url"] = relative_url(f["storage_url"], library_data_url())
+            f["storage_url"] = relative_url(f["storage_url"], library_page_url())
 
 
 def _export_channel_nodes(data_dir, channel_id, course_ids, left_out_file_ids):
@@ -196,7 +197,7 @@ def _export_channel_nodes(data_dir, channel_id, course_ids, left_out_file_ids):
     index = []
     for node in _serialized_nodes(channel_id):
         _leave_out_files(node, left_out_file_ids)
-        _relative_to_library_data(node)
+        _relative_to_page(node)
         _write_json(os.path.join(data_dir, "nodes", f"{node['id']}.json"), node)
         if node["parent"]:
             children[node["parent"]].append(node)

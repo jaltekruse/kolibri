@@ -65,12 +65,12 @@ class StaticLibraryTestCase(APITestCase):
         return response.json()
 
     def exported(self, node):
-        """A node as the API returns it, with URLs relative to the library's data."""
+        """A node as the API returns it, with URLs relative to the page."""
         if node["thumbnail"]:
-            node["thumbnail"] = "../" + node["thumbnail"].lstrip("/")
+            node["thumbnail"] = node["thumbnail"].lstrip("/")
         for f in node["files"]:
             if f["storage_url"]:
-                f["storage_url"] = "../" + f["storage_url"].lstrip("/")
+                f["storage_url"] = f["storage_url"].lstrip("/")
         return node
 
 
@@ -106,7 +106,7 @@ class ExportLibraryDataTestCase(StaticLibraryTestCase):
     def test_writes_the_channels_as_the_api_lists_them(self):
         channels = self.api("channel-list", {"available": True})
         for channel in channels:
-            channel["thumbnail"] = f"channel-thumbnails/{channel['id']}.png"
+            channel["thumbnail"] = f"library/channel-thumbnails/{channel['id']}.png"
         self.assertEqual(self.data("channels.json"), channels)
 
     def test_writes_channel_thumbnails_as_files(self):
@@ -327,6 +327,25 @@ class ExportPageTestCase(StaticLibraryTestCase):
         self.assertIn('"__zipContentUrl":"content/zipcontent/"', page)
         for root in ("/static/", "/content/", "/library/"):
             self.assertNotIn(f'"{root}', page)
+
+    @patch.object(WebpackBundleHook, "bundle", property(built_bundle))
+    def test_resolves_the_pages_urls_before_kolibris_scripts_run(self):
+        export_page(self.output)
+
+        with open(self.path("index.html"), encoding="utf-8") as f:
+            page = f.read()
+        # Whichever of Kolibri's scripts loads first, it reads them resolved
+        script = page.index("<script data-relative-roots=")
+        self.assertLess(script, page.index("<script", page.index("</script>", script)))
+        self.assertLess(
+            page.index('data-plugin="kolibri.core.default_frontend"'), script
+        )
+        self.assertLess(script, page.index("kolibri.core.default_frontend.js"))
+        self.assertIn(
+            'data-relative-roots="[&quot;content/&quot;, &quot;library/&quot;, '
+            '&quot;static/&quot;]"',
+            page,
+        )
 
     @patch.object(WebpackBundleHook, "bundle", property(built_bundle))
     @override_option("Deployment", "URL_PATH_PREFIX", "/kolibri/")

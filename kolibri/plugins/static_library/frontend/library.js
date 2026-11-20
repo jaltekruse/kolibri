@@ -11,13 +11,13 @@ const ID = /^[0-9a-f]{32}$/;
  */
 export default function createLibrary(dataUrl) {
   const files = new Map();
-  // The export writes the files' URLs relative to the library's data, so it works
-  // wherever it is served from; requests made elsewhere, as from the frames content
-  // plays in, need them whole
-  const base = new URL(dataUrl, document.baseURI);
+  // The export writes the files' URLs relative to the page, so it works wherever it
+  // is served from; requests made elsewhere, as from the frames content plays in,
+  // need them whole
+  const page = new URL('.', document.baseURI);
 
   function whole(url) {
-    return url ? new URL(url, base).href : url;
+    return url ? new URL(url, page).href : url;
   }
 
   function withWholeUrls(node) {
