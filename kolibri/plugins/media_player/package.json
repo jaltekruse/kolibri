@@ -12,6 +12,7 @@
     "kolibri": "workspace:*",
     "kolibri-common": "workspace:*",
     "kolibri-design-system": "catalog:",
+    "kolibri-plugin-data": "workspace:*",
     "kolibri-viewer": "workspace:*",
     "lockr": "0.8.5",
     "lodash": "catalog:",

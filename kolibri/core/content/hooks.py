@@ -6,7 +6,9 @@ Hooks for managing the display and viewing of content.
 """
 
 import json
+import operator
 from abc import abstractmethod
+from functools import reduce
 
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
@@ -41,6 +43,17 @@ class ContentViewerHook(WebpackBundleHook, WebpackInclusionMixin):
 
     #: Whether to allow object tag handling (defaults to False for sandboxing compatibility)
     allow_object_tag = False
+
+    #: Whether the content origin serves this plugin's static directory, for
+    #: pages the viewer frames from there
+    sandbox_static = False
+
+    @property
+    def sandbox_static_path(self):
+        """
+        Returns the filesystem path to the plugin's static directory.
+        """
+        return str(files(self._module_path).joinpath("static"))
 
     @classmethod
     def all_css_selectors(cls):
@@ -127,12 +140,7 @@ class SandboxedContentViewerHook(ContentViewerHook):
     #: Bundle ID of the sandbox handler, declared in buildConfig.js with sandbox_handler: true
     sandbox_handler_id = "sandbox_handler"
 
-    @property
-    def sandbox_static_path(self):
-        """
-        Returns the filesystem path to the plugin's static directory.
-        """
-        return str(files(self._module_path).joinpath("static"))
+    sandbox_static = True
 
     @classmethod
     def get_sandbox_static_paths(cls):
@@ -142,7 +150,8 @@ class SandboxedContentViewerHook(ContentViewerHook):
 
         Includes:
         - Core content static directory (kolibri/core/content/static)
-        - Plugin static directories for each registered sandbox handler
+        - Plugin static directories for each registered sandbox handler, and
+          each content viewer that sets sandbox_static
 
         All of these are mounted at one URL root, and the first location holding a
         path wins, so a plugin must namespace its own subdirectory (core is mounted
@@ -150,7 +159,9 @@ class SandboxedContentViewerHook(ContentViewerHook):
         """
         core_static_path = str(files("kolibri.core.content").joinpath("static"))
         return [core_static_path] + [
-            hook.sandbox_static_path for hook in cls.registered_hooks
+            hook.sandbox_static_path
+            for hook in ContentViewerHook.registered_hooks
+            if hook.sandbox_static
         ]
 
     @property
@@ -224,3 +235,51 @@ class ShareFileHook(KolibriHook):
     def execute_file_share(cls, filename, message):
         for hook in cls.registered_hooks:
             hook.share_file(filename, message)
+
+
+@define_hook
+class ChannelImportHook(KolibriHook):
+    """
+    A hook for plugins to act on a channel's content nodes once an import has
+    replaced them: a new channel, or a new version of one.
+    """
+
+    @abstractmethod
+    def channel_imported(self, channel_id):
+        pass
+
+    @classmethod
+    def execute_channel_imported(cls, channel_id):
+        for hook in cls.registered_hooks:
+            hook.channel_imported(channel_id)
+
+
+@define_hook
+class StreamedContentHook(KolibriHook):
+    """
+    A hook for plugins that play some resources without their files, as videos from
+    YouTube, so a copy of the library can leave those files out.
+    """
+
+    @property
+    def enabled(self):
+        """Whether the plugin plays resources without their files."""
+        return True
+
+    @abstractmethod
+    def streamed_files(self):
+        """A Q of the Files the plugin plays their resources without."""
+
+    @classmethod
+    def _enabled_hooks(cls):
+        return [hook for hook in cls.registered_hooks if hook.enabled]
+
+    @classmethod
+    def is_enabled(cls):
+        return bool(cls._enabled_hooks())
+
+    @classmethod
+    def streamed_files_filter(cls):
+        """A Q of the Files some plugin plays their resources without, or None."""
+        filters = [hook.streamed_files() for hook in cls._enabled_hooks()]
+        return reduce(operator.or_, filters) if filters else None

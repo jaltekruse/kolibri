@@ -119,4 +119,14 @@ export default createTranslator('MediaPlayerStrings', {
     message: 'The media is encrypted and we do not have the keys to decrypt it',
     context: 'Error message displayed when encrypted media cannot be decrypted.',
   },
+  youtubeVideo: {
+    message: 'Video from YouTube',
+    context:
+      'Title, read by screen readers, of the frame that plays a video from YouTube instead of from Kolibri.',
+  },
+  notOnDevice: {
+    message: "This video isn't on this device, and can't play from YouTube right now",
+    context:
+      "Shown in place of a video whose files were left out, as from a static library whose videos play from YouTube, when YouTube can't be reached or can't play it.",
+  },
 });
